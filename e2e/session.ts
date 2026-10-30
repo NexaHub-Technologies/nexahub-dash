@@ -14,6 +14,19 @@ export async function signInAs(page: Page, app: string, email: string) {
 	await expect(page.getByText("a sign-in link is on its way")).toBeVisible();
 	await page.goto(await signInLink(email, app));
 	await expect(page).toHaveURL("/");
+	await hydrated(page);
+}
+
+/* Server-rendered pages show their buttons before React wires them up; a
+   click in that moment does nothing, so wait for the root's marker. */
+export async function hydrated(page: Page) {
+	await page.locator("html[data-hydrated]").waitFor({ state: "attached" });
+}
+
+/* Opens a page and waits until it responds to clicks. */
+export async function visit(page: Page, path: string) {
+	await page.goto(path);
+	await hydrated(page);
 }
 
 /* On a phone the sidebar is a drawer behind the menu button. */

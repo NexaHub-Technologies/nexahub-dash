@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx biome check
+      # the schema is the backend: prove it builds from nothing and that its
+      # access rules and triggers behave, before anything else
+      - run: bun run db:up
+      - run: bun run db:reset
+      - run: bun run test:db
+      - name: Types match the schema
+        env:
+          DATABASE_OWNER_URL: postgres://postgres:postgres@127.0.0.1:54322/nexahub
+        run: |
+          bun run db:types
+          git diff --exit-code src/lib/db.types.ts
+      - run: bunx tsc --noEmit
+      - run: bun run test --passWithNoTests
+
+  # Sign-in needs Neon Auth, which only runs on Neon: each run gets its own
+  # branch of the project, migrated, tested and then deleted.
+  # Forks never receive the secrets, so their pull requests stop at `check`.
+  e2e:
+    needs: check
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - uses: neondatabase/create-branch-action@v6
+        id: branch
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+      - name: Connect, migrate and add the test admin
+        env:
+          NEON_BRANCH_ID: ${{ steps.branch.outputs.branch_id }}
+        run: |
+          api="https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches/$NEON_BRANCH_ID"
+          cs() { bunx neonctl connection-string "$NEON_BRANCH_ID" --project-id "$NEON_PROJECT_ID" "$@"; }
+          owner=$(cs --role-name neondb_owner)
+          # dash_app was made with SQL (see 20261029115900_platform.sql), so
+          # Neon doesn't hold its password: it comes from a secret, and the
+          # branch's host from the owner's connection string
+          pooled_host=$(echo "$owner" | sed -E 's#^[^@]+@([^.]+)\.#\1-pooler.#; s#/.*##')
+          {
+            echo "DATABASE_OWNER_URL=$owner"
+            echo "DATABASE_URL=postgresql://dash_app:${{ secrets.DASH_APP_PASSWORD }}@$pooled_host/neondb?sslmode=require"
+            echo "NEON_AUTH_BASE_URL=$(curl -fsS -H "Authorization: Bearer $NEON_API_KEY" "$api/auth" | jq -r .base_url)"
+            echo "NEON_AUTH_COOKIE_SECRET=$(openssl rand -base64 32)"
+          } > .env
+          set -a; . ./.env; set +a
+          bun run db:migrate
+          bun scripts/bootstrap-admin.ts admin@nexahub.test Admin
+      - run: bunx playwright install chrome
+      - run: bun run test:e2e
+      - if: always() && steps.branch.outputs.branch_id
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: ${{ steps.branch.outputs.branch_id }}
+          api_key: ${{ secrets.NEON_API_KEY }}

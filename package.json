@@ -1,0 +1,57 @@
+{
+	"name": "nexahub-dash",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#/*": "./src/*"
+	},
+	"scripts": {
+		"dev": "vite dev --port 3030 --strictPort",
+		"build": "vite build",
+		"preview": "vite preview",
+		"generate-routes": "tsr generate",
+		"test": "vitest run",
+		"test:db": "docker compose exec -T db pg_prove -U postgres -d nexahub --ext .sql -r /db/tests",
+		"test:e2e": "playwright test",
+		"check": "biome check",
+		"db:types": "kysely-codegen --dialect postgres --url \"$DATABASE_OWNER_URL\" --default-schema public --include-pattern 'public.*' --out-file src/lib/db.types.ts",
+		"db:up": "docker compose up -d --wait",
+		"db:reset": "scripts/db-reset.sh",
+		"db:migrate": "bun scripts/migrate.ts"
+	},
+	"dependencies": {
+		"@neondatabase/auth": "^0.7.0-beta",
+		"@tailwindcss/vite": "4.3.1",
+		"@tanstack/react-router": "1.170.46",
+		"@tanstack/react-start": "1.169.4",
+		"@tanstack/router-plugin": "1.168.48",
+		"clsx": "2.1.1",
+		"kysely": "^0.29.7",
+		"kysely-postgres-js": "^5.0.1",
+		"lucide-react": "0.577.0",
+		"nitro": "npm:nitro-nightly@3.0.1-20260624-221007-37db9eee",
+		"postgres": "^4.0.0",
+		"react": "19.2.7",
+		"react-dom": "19.2.7",
+		"tailwind-merge": "3.6.0",
+		"tailwindcss": "4.3.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.5",
+		"@neon/config": "^1.9.6",
+		"@playwright/test": "1.64.1",
+		"@rolldown/plugin-babel": "0.2.3",
+		"@tanstack/router-cli": "1.167.46",
+		"@types/node": "22.20.0",
+		"@types/react": "19.2.17",
+		"@types/react-dom": "19.2.3",
+		"@vitejs/plugin-react": "6.0.3",
+		"babel-plugin-react-compiler": "1.0.0",
+		"jsdom": "28.1.0",
+		"kysely-codegen": "^0.20.0",
+		"pg": "^8.23.1",
+		"typescript": "6.0.3",
+		"vite": "8.1.0",
+		"vitest": "4.1.9"
+	}
+}

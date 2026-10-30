@@ -1,0 +1,19 @@
+node_modules
+dist
+.output
+.nitro
+.tanstack
+.vercel
+.env
+.env.local
+*.local
+.DS_Store
+
+# neon project link (org, project, branch ids)
+.neon
+.env.local
+
+# playwright output
+test-results
+playwright-report
+blob-report

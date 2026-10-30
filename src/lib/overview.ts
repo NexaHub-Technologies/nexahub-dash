@@ -33,7 +33,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 				[K in keyof OverviewStats]: string;
 			}>`select
 				(select count(*) from public.applications where status = 'new') as "newApplications",
-				(select count(*) from public.students) as "students",
+				(select count(distinct student_id) from public.enrolments where status = 'active') as "students",
 				(select count(*) from public.cohorts where ends_on >= ${today}) as "activeCohorts",
 				(select count(*) from public.courses) as "courses"`.execute(db);
 			const r = rows[0];

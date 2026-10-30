@@ -19,7 +19,26 @@ const day = new Intl.DateTimeFormat("en-NG", {
 	month: "short",
 });
 
+const date = new Intl.DateTimeFormat("en-NG", {
+	timeZone: "Africa/Lagos",
+	day: "numeric",
+	month: "short",
+	year: "numeric",
+});
+
 export const formatCount = (n: number) => count.format(n);
+
+/* a calendar date ("2026-11-09") or a timestamp, as "9 Nov 2026" */
+export const formatDate = (d: string) =>
+	date.format(new Date(/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d}T12:00:00Z` : d));
+
+/* what someone types into a naira box ("75,000", "₦75000.50") as kobo;
+   null when it isn't an amount */
+export function parseNaira(input: string): number | null {
+	const cleaned = input.replace(/[₦,\s]/g, "");
+	if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+	return Math.round(Number(cleaned) * 100);
+}
 export const formatNaira = (kobo: number) => naira.format(kobo / 100);
 export const formatClock = (iso: string) => clock.format(new Date(iso));
 

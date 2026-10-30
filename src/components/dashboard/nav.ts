@@ -1,4 +1,10 @@
-import { BookOpenIcon, LayoutGridIcon, type LucideIcon } from "lucide-react";
+import {
+	BookOpenIcon,
+	GraduationCapIcon,
+	InboxIcon,
+	LayoutGridIcon,
+	type LucideIcon,
+} from "lucide-react";
 
 /* The console's sections. Each lands here as its build phase does; `admin`
    ones are hidden from instructors, whose routes refuse them too. */
@@ -11,6 +17,8 @@ export type NavItem = {
 
 export const MAIN_NAV: NavItem[] = [
 	{ to: "/", label: "Dashboard", Icon: LayoutGridIcon, admin: false },
+	{ to: "/applications", label: "Applications", Icon: InboxIcon, admin: true },
+	{ to: "/students", label: "Students", Icon: GraduationCapIcon, admin: true },
 	{ to: "/courses", label: "Courses", Icon: BookOpenIcon, admin: false },
 ];
 

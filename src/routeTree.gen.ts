@@ -14,8 +14,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignoutRouteImport } from './routes/auth/signout'
+import { Route as AppApplicationsIndexRouteImport } from './routes/_app/applications/index'
+import { Route as AppApplicationsIdRouteImport } from './routes/_app/applications/$id'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
 import { Route as AppCoursesSlugRouteImport } from './routes/_app/courses/$slug'
+import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
+import { Route as AppStudentsIdRouteImport } from './routes/_app/students/$id'
+import { Route as StudentsIdRecordDotpdfRouteImport } from './routes/students/$id.record[.]pdf'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -41,6 +46,16 @@ const AuthSignoutRoute = AuthSignoutRouteImport.update({
   path: '/auth/signout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppApplicationsIndexRoute = AppApplicationsIndexRouteImport.update({
+  id: '/applications/',
+  path: '/applications/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppApplicationsIdRoute = AppApplicationsIdRouteImport.update({
+  id: '/applications/$id',
+  path: '/applications/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
   id: '/courses/',
   path: '/courses/',
@@ -51,22 +66,47 @@ const AppCoursesSlugRoute = AppCoursesSlugRouteImport.update({
   path: '/courses/$slug',
   getParentRoute: () => AppRoute,
 } as any)
+const AppStudentsIndexRoute = AppStudentsIndexRouteImport.update({
+  id: '/students/',
+  path: '/students/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStudentsIdRoute = AppStudentsIdRouteImport.update({
+  id: '/students/$id',
+  path: '/students/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const StudentsIdRecordDotpdfRoute = StudentsIdRecordDotpdfRouteImport.update({
+  id: '/students/$id/record.pdf',
+  path: '/students/$id/record.pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
+  '/applications/$id': typeof AppApplicationsIdRoute
   '/courses/$slug': typeof AppCoursesSlugRoute
+  '/students/$id': typeof AppStudentsIdRoute
+  '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
+  '/applications/': typeof AppApplicationsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
+  '/students/': typeof AppStudentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
   '/': typeof AppIndexRoute
+  '/applications/$id': typeof AppApplicationsIdRoute
   '/courses/$slug': typeof AppCoursesSlugRoute
+  '/students/$id': typeof AppStudentsIdRoute
+  '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
+  '/applications': typeof AppApplicationsIndexRoute
   '/courses': typeof AppCoursesIndexRoute
+  '/students': typeof AppStudentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,8 +115,13 @@ export interface FileRoutesById {
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/applications/$id': typeof AppApplicationsIdRoute
   '/_app/courses/$slug': typeof AppCoursesSlugRoute
+  '/_app/students/$id': typeof AppStudentsIdRoute
+  '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
+  '/_app/applications/': typeof AppApplicationsIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
+  '/_app/students/': typeof AppStudentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -85,16 +130,26 @@ export interface FileRouteTypes {
     | '/login'
     | '/auth/signin'
     | '/auth/signout'
+    | '/applications/$id'
     | '/courses/$slug'
+    | '/students/$id'
+    | '/students/$id/record.pdf'
+    | '/applications/'
     | '/courses/'
+    | '/students/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/auth/signin'
     | '/auth/signout'
     | '/'
+    | '/applications/$id'
     | '/courses/$slug'
+    | '/students/$id'
+    | '/students/$id/record.pdf'
+    | '/applications'
     | '/courses'
+    | '/students'
   id:
     | '__root__'
     | '/_app'
@@ -102,8 +157,13 @@ export interface FileRouteTypes {
     | '/auth/signin'
     | '/auth/signout'
     | '/_app/'
+    | '/_app/applications/$id'
     | '/_app/courses/$slug'
+    | '/_app/students/$id'
+    | '/students/$id/record.pdf'
+    | '/_app/applications/'
     | '/_app/courses/'
+    | '/_app/students/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,6 +171,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   AuthSigninRoute: typeof AuthSigninRoute
   AuthSignoutRoute: typeof AuthSignoutRoute
+  StudentsIdRecordDotpdfRoute: typeof StudentsIdRecordDotpdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -150,6 +211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/applications/': {
+      id: '/_app/applications/'
+      path: '/applications'
+      fullPath: '/applications/'
+      preLoaderRoute: typeof AppApplicationsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/applications/$id': {
+      id: '/_app/applications/$id'
+      path: '/applications/$id'
+      fullPath: '/applications/$id'
+      preLoaderRoute: typeof AppApplicationsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/courses/': {
       id: '/_app/courses/'
       path: '/courses'
@@ -164,19 +239,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoursesSlugRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/students/': {
+      id: '/_app/students/'
+      path: '/students'
+      fullPath: '/students/'
+      preLoaderRoute: typeof AppStudentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/students/$id': {
+      id: '/_app/students/$id'
+      path: '/students/$id'
+      fullPath: '/students/$id'
+      preLoaderRoute: typeof AppStudentsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/students/$id/record.pdf': {
+      id: '/students/$id/record.pdf'
+      path: '/students/$id/record.pdf'
+      fullPath: '/students/$id/record.pdf'
+      preLoaderRoute: typeof StudentsIdRecordDotpdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppApplicationsIdRoute: typeof AppApplicationsIdRoute
   AppCoursesSlugRoute: typeof AppCoursesSlugRoute
+  AppStudentsIdRoute: typeof AppStudentsIdRoute
+  AppApplicationsIndexRoute: typeof AppApplicationsIndexRoute
   AppCoursesIndexRoute: typeof AppCoursesIndexRoute
+  AppStudentsIndexRoute: typeof AppStudentsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppApplicationsIdRoute: AppApplicationsIdRoute,
   AppCoursesSlugRoute: AppCoursesSlugRoute,
+  AppStudentsIdRoute: AppStudentsIdRoute,
+  AppApplicationsIndexRoute: AppApplicationsIndexRoute,
   AppCoursesIndexRoute: AppCoursesIndexRoute,
+  AppStudentsIndexRoute: AppStudentsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -186,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   AuthSigninRoute: AuthSigninRoute,
   AuthSignoutRoute: AuthSignoutRoute,
+  StudentsIdRecordDotpdfRoute: StudentsIdRecordDotpdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

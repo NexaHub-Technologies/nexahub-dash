@@ -11,7 +11,7 @@ export type AttendanceStatus = "absent" | "excused" | "late" | "present";
 
 export type Channel = "email" | "sms";
 
-export type EnrolmentStatus = "active" | "completed" | "withdrawn";
+export type EnrolmentStatus = "active" | "awaiting_payment" | "completed" | "paused" | "withdrawn";
 
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
@@ -117,9 +117,11 @@ export interface Courses {
 }
 
 export interface Enrolments {
-  cohort_id: string;
+  cohort_id: string | null;
+  course_slug: string;
   created_at: Generated<Timestamp>;
   id: Generated<string>;
+  starts_on: Timestamp | null;
   status: Generated<EnrolmentStatus>;
   student_id: string;
 }
@@ -211,8 +213,10 @@ export interface Staff {
 }
 
 export interface Students {
+  address: string | null;
   application_id: string | null;
   created_at: Generated<Timestamp>;
+  date_of_birth: Timestamp | null;
   email: string;
   employment: string | null;
   full_name: string;

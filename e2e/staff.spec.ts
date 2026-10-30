@@ -5,6 +5,9 @@ import { forgetSignInLinks } from "./sign-in-link";
 /* one address per project, so desktop and mobile runs don't collide */
 const invitee = (project: string) => `new-instructor-${project}@nexahub.test`;
 
+/* several round trips to Neon each, and sign-in links are rate-limited */
+test.slow();
+
 test.beforeEach(async ({}, info) => {
 	await forgetSignInLinks();
 	await forgetPeople([invitee(info.project.name)]);

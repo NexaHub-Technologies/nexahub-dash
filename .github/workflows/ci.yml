@@ -63,10 +63,12 @@ jobs:
             echo "DATABASE_URL=postgresql://dash_app:${{ secrets.DASH_APP_PASSWORD }}@$pooled_host/neondb?sslmode=require"
             echo "NEON_AUTH_BASE_URL=$(curl -fsS -H "Authorization: Bearer $NEON_API_KEY" "$api/auth" | jq -r .base_url)"
             echo "NEON_AUTH_COOKIE_SECRET=$(openssl rand -base64 32)"
+            echo "E2E_ADMIN_EMAIL=admin@nexahub.test"
+            echo "E2E_ADMIN_PASSWORD=$(openssl rand -base64 24)"
           } > .env
           set -a; . ./.env; set +a
           bun run db:migrate
-          bun scripts/bootstrap-admin.ts admin@nexahub.test Admin
+          ADMIN_PASSWORD="$E2E_ADMIN_PASSWORD" bun scripts/bootstrap-admin.ts "$E2E_ADMIN_EMAIL" Admin
       - run: bunx playwright install chrome
       - run: bun run test:e2e
       - if: always() && steps.branch.outputs.branch_id

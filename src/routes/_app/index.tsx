@@ -256,14 +256,21 @@ function Dashboard() {
 										/>
 									}
 									title={c.title}
-									subtitle={`${c.modules} modules`}
+									subtitle={`${formatCount(c.activeStudents)} active students`}
+									trailing={
+										isAdmin ? (
+											<span className="tabular-nums">
+												{formatCount(c.applicants)} applicants
+											</span>
+										) : undefined
+									}
 									to={`/courses/${c.slug}`}
 								/>
 							))}
 						</ul>
 					) : (
 						<PanelEmpty Icon={BookOpenIcon}>
-							No courses yet. Run the website's sync-courses script.
+							No courses yet. Each appears with its first application.
 						</PanelEmpty>
 					)}
 				</Panel>

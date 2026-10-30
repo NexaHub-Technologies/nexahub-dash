@@ -11,28 +11,57 @@ import {
 
 test.describe.configure({ timeout: 120_000 });
 
-/* A course of its own, so the test doesn't depend on the website having
-   synced to this branch. Owner-only, on the branch the tests use. */
+/* A course with known numbers, so the test doesn't depend on whatever else
+   is on the branch: 3 applicants (2 waiting, 1 approved), 2 active students
+   and 1 who completed. Owner-only, on the branch the tests use. */
 const sql = postgres(process.env.DATABASE_OWNER_URL ?? "", { max: 1 });
-const SLUG = "e2e-test-course";
+const SLUG = "e2e-metrics-course";
+const UNSEEN = "e2e-brand-new-course";
+const COHORT = "e0000000-0000-0000-0000-0000000000c1";
+const STUDENTS = [
+	"e0000000-0000-0000-0000-0000000000a1",
+	"e0000000-0000-0000-0000-0000000000a2",
+	"e0000000-0000-0000-0000-0000000000a3",
+];
+
+const application = (slug: string, name: string, status = "new") => sql`
+	insert into public.applications
+		(course_slug, full_name, email, phone, gender, employment, mode,
+		 has_experience, has_laptop, heard_from, can_commit, notify_consent, status)
+	values (${slug}, ${name}, ${`${name.toLowerCase().replace(/\W+/g, ".")}@tests.invalid`},
+		'+2348030000001', 'Female', 'Student', 'Online training', false, true,
+		'Other', true, true, ${status})`;
+
+async function cleanUp() {
+	await sql`delete from public.applications where course_slug in (${SLUG}, ${UNSEEN})`;
+	await sql`delete from public.students where id = any(${STUDENTS})`;
+	await sql`delete from public.cohorts where id = ${COHORT}`;
+	await sql`delete from public.courses where slug in (${SLUG}, ${UNSEEN})`;
+}
 
 test.beforeAll(async () => {
-	await sql`insert into public.courses (slug, title, default_fee_kobo)
-		values (${SLUG}, 'E2E Test Course', 12500000)
-		on conflict (slug) do update set title = excluded.title, default_fee_kobo = excluded.default_fee_kobo`;
-	await sql`insert into public.course_modules (course_slug, n, title)
-		values (${SLUG}, 1, 'Getting started'), (${SLUG}, 2, 'Going further')
-		on conflict do nothing`;
+	await cleanUp();
+	await sql`insert into public.courses (slug, title) values (${SLUG}, 'E2E Metrics Course')`;
+	await application(SLUG, "Ada Waiting");
+	await application(SLUG, "Bayo Waiting");
+	await application(SLUG, "Chi Approved", "approved");
+	await sql`insert into public.cohorts
+		(id, course_slug, name, starts_on, ends_on, mode, fee_kobo)
+		values (${COHORT}, ${SLUG}, 'E2E Cohort', current_date - 7, current_date + 60, 'online', 0)`;
+	for (const [i, id] of STUDENTS.entries()) {
+		await sql`insert into public.students (id, full_name, email)
+			values (${id}, ${`E2E Student ${i + 1}`}, ${`e2e.student${i + 1}@tests.invalid`})`;
+		await sql`insert into public.enrolments (student_id, cohort_id, status)
+			values (${id}, ${COHORT}, ${i < 2 ? "active" : "completed"})`;
+	}
 });
 
 test.afterAll(async () => {
-	await sql`delete from public.courses where slug = ${SLUG}`;
+	await cleanUp();
 	await sql.end();
 });
 
-test("courses are listed with their fee, and each shows its modules", async ({
-	page,
-}) => {
+test("each course shows its applicants and students", async ({ page }) => {
 	await signInAs(page, ADMIN, ADMIN_PASSWORD);
 	await openNav(page);
 	await navLink(page, "Courses").click();
@@ -42,15 +71,37 @@ test("courses are listed with their fee, and each shows its modules", async ({
 		timeout: 20_000,
 	});
 
-	const row = page.getByRole("row").filter({ hasText: "E2E Test Course" });
-	await expect(row).toContainText("₦125,000");
-	await expect(row.getByRole("cell").nth(1)).toHaveText("2");
+	const row = page.getByRole("row").filter({ hasText: "E2E Metrics Course" });
+	const cells = row.getByRole("cell");
+	await expect(cells.nth(1)).toHaveText("2 new3");
+	await expect(cells.nth(2)).toHaveText("2");
 
-	await row.getByRole("link", { name: "E2E Test Course" }).click();
+	await row.getByRole("link", { name: "E2E Metrics Course" }).click();
 	await expect(page).toHaveURL(`/courses/${SLUG}`);
+	await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+		"E2E Metrics Course",
+		{ timeout: 20_000 },
+	);
+	await expect(page.getByText("2 waiting · 1 approved")).toBeVisible();
+	const applicants = page
+		.getByRole("listitem")
+		.filter({ hasText: "Chi Approved" });
+	await expect(applicants).toContainText("approved");
 	await expect(
-		page.getByRole("listitem").filter({ hasText: "Going further" }),
-	).toContainText("02", { timeout: 20_000 });
+		page.getByRole("listitem").filter({ hasText: "E2E Cohort" }),
+	).toContainText("2 students");
+});
+
+test("a course the website adds appears with its first application", async ({
+	page,
+}) => {
+	await application(UNSEEN, "Dayo First");
+	await signInAs(page, ADMIN, ADMIN_PASSWORD);
+	await page.goto("/courses");
+	await hydrated(page);
+	const row = page.getByRole("row").filter({ hasText: "E2e Brand New Course" });
+	await expect(row).toBeVisible({ timeout: 20_000 });
+	await expect(row.getByRole("cell").nth(1)).toHaveText("1 new1");
 });
 
 test("the overview folds to one line away from the dashboard, and stays as chosen", async ({

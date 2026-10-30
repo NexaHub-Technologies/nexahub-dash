@@ -6,12 +6,22 @@ import { signInLink } from "./sign-in-link";
 /* needs the admin scripts/bootstrap-admin.ts creates on the test branch */
 export const ADMIN = process.env.E2E_ADMIN_EMAIL ?? "admin@nexahub.test";
 
-/* Signs in the way a person does: the login form, then the emailed link. */
+/* Signs in the way a person does: the login form, then the emailed link.
+   Neon Auth allows only a few magic links in a short window and the tests
+   ask for many, so a "couldn't send" answer waits out the window and tries
+   again, as a person would. */
 export async function signInAs(page: Page, app: string, email: string) {
-	await page.goto("/login");
-	await page.getByLabel("Work email").fill(email);
-	await page.getByRole("button", { name: "Email me a sign-in link" }).click();
-	await expect(page.getByText("a sign-in link is on its way")).toBeVisible();
+	const sent = page.getByText("a sign-in link is on its way");
+	const failed = page.getByText("Could not send a link right now");
+	for (let attempt = 1; ; attempt++) {
+		await page.goto("/login");
+		await page.getByLabel("Work email").fill(email);
+		await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+		await expect(sent.or(failed)).toBeVisible();
+		if (await sent.isVisible()) break;
+		if (attempt === 3) throw new Error(`no sign-in link could be sent to ${email}`);
+		await page.waitForTimeout(11_000);
+	}
 	await page.goto(await signInLink(email, app));
 	await expect(page).toHaveURL("/");
 	await hydrated(page);

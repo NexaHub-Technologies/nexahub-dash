@@ -22,6 +22,7 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 	SidebarTrigger,
+	useSidebar,
 } from "#/components/ui/sidebar";
 import { getStaff } from "../lib/auth";
 
@@ -51,6 +52,29 @@ const initials = (name: string) =>
 		.map((w) => w[0]?.toUpperCase())
 		.join("");
 
+/* On a phone the sidebar is a drawer over the page; it closes once a section
+   is chosen, or the new page would sit behind it. */
+function NavItem({
+	item,
+	active,
+}: {
+	item: (typeof NAV)[number];
+	active: boolean;
+}) {
+	const { setOpenMobile } = useSidebar();
+	return (
+		<SidebarMenuItem>
+			<SidebarMenuButton
+				isActive={active}
+				render={<Link to={item.to} onClick={() => setOpenMobile(false)} />}
+			>
+				<item.icon />
+				<span>{item.label}</span>
+			</SidebarMenuButton>
+		</SidebarMenuItem>
+	);
+}
+
 function AppShell() {
 	const { staff } = Route.useRouteContext();
 	const { pathname } = useLocation();
@@ -70,15 +94,7 @@ function AppShell() {
 						<SidebarGroupContent>
 							<SidebarMenu>
 								{nav.map((n) => (
-									<SidebarMenuItem key={n.to}>
-										<SidebarMenuButton
-											isActive={pathname === n.to}
-											render={<Link to={n.to} />}
-										>
-											<n.icon />
-											<span>{n.label}</span>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
+									<NavItem key={n.to} item={n} active={pathname === n.to} />
 								))}
 							</SidebarMenu>
 						</SidebarGroupContent>

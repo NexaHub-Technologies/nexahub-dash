@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	BookOpenIcon,
 	CalendarClockIcon,
@@ -56,6 +56,7 @@ function Dashboard() {
 		Icon: LucideIcon;
 		tone: Tone;
 		adminOnly: boolean;
+		to?: string;
 	}[] = [
 		{
 			label: "Applications to review",
@@ -63,6 +64,7 @@ function Dashboard() {
 			Icon: InboxIcon,
 			tone: "warning",
 			adminOnly: true,
+			to: "/applications",
 		},
 		{
 			label: "Overdue invoices",
@@ -105,16 +107,15 @@ function Dashboard() {
 					<ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
 						{queue
 							.filter((q) => isAdmin || !q.adminOnly)
-							.map(({ label, count, Icon, tone }) => {
+							.map(({ label, count, Icon, tone, to }) => {
 								const clear = count === 0;
-								return (
-									<li
-										key={label}
-										className={cn(
-											"flex h-full flex-col gap-3 rounded-lg border p-4",
-											clear && "border-line-soft",
-										)}
-									>
+								const cls = cn(
+									"flex h-full flex-col gap-3 rounded-lg border p-4",
+									clear && "border-line-soft",
+									to && "transition-colors hover:bg-muted",
+								);
+								const body = (
+									<>
 										<IconChip
 											Icon={clear ? CheckCircle2Icon : Icon}
 											tone={clear ? "success" : tone}
@@ -128,6 +129,17 @@ function Dashboard() {
 												{clear ? `${label} · all clear` : label}
 											</span>
 										</span>
+									</>
+								);
+								return (
+									<li key={label}>
+										{to ? (
+											<Link to={to} className={cls}>
+												{body}
+											</Link>
+										) : (
+											<div className={cls}>{body}</div>
+										)}
 									</li>
 								);
 							})}
@@ -172,7 +184,7 @@ function Dashboard() {
 
 			<div className="grid items-start gap-6 xl:grid-cols-3">
 				{isAdmin ? (
-					<Panel title="Recent applications">
+					<Panel title="Recent applications" to="/applications">
 						{d.recentApplications.length ? (
 							<ul className="flex flex-col">
 								{d.recentApplications.map((a) => (
@@ -196,6 +208,7 @@ function Dashboard() {
 												<span>{timeAgo(a.created_at)}</span>
 											</>
 										}
+										to={`/applications/${a.id}`}
 									/>
 								))}
 							</ul>

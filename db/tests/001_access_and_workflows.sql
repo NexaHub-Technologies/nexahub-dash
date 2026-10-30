@@ -84,7 +84,7 @@ select throws_ok($$
           'Online training', false, true, 'Other', true, true)
 $$, '23514', null, 'a malformed email is rejected by the database, not just the form');
 
-select throws_ok($$ select public.approve_application(gen_random_uuid(), gen_random_uuid()) $$,
+select throws_ok($$ select public.approve_application(gen_random_uuid()) $$,
   '42501', null, 'the website cannot call approve_application');
 
 reset role;
@@ -98,7 +98,7 @@ select set_config('request.jwt.claims',
   '{"sub": "a0000000-0000-0000-0000-000000000002", "role": "authenticated"}', true);
 
 select throws_ok(
-  format($$ select public.approve_application(%L, 'c0000000-0000-0000-0000-000000000001') $$,
+  format($$ select public.approve_application(%L, p_cohort => 'c0000000-0000-0000-0000-000000000001') $$,
          current_setting('test.ada')),
   '42501', null, 'an instructor cannot approve applications');
 
@@ -110,7 +110,7 @@ select set_config('request.jwt.claims',
 
 select set_config('test.enrolment',
   public.approve_application(current_setting('test.ada')::uuid,
-                             'c0000000-0000-0000-0000-000000000001')::text, true);
+                             p_cohort => 'c0000000-0000-0000-0000-000000000001')::text, true);
 
 select isnt(current_setting('test.enrolment'), '', 'an admin approves an application');
 
@@ -127,12 +127,12 @@ select is(
   'a0000000-0000-0000-0000-000000000001'::uuid, 'the approval records who approved it');
 
 select throws_ok(
-  format($$ select public.approve_application(%L, 'c0000000-0000-0000-0000-000000000001') $$,
+  format($$ select public.approve_application(%L, p_cohort => 'c0000000-0000-0000-0000-000000000001') $$,
          current_setting('test.ada')),
   '22023', null, 'an application cannot be approved twice');
 
 select lives_ok(
-  format($$ select public.approve_application(%L, 'c0000000-0000-0000-0000-000000000002') $$,
+  format($$ select public.approve_application(%L, p_cohort => 'c0000000-0000-0000-0000-000000000002') $$,
          current_setting('test.bayo')),
   'a second student joins the other cohort');
 
@@ -276,7 +276,7 @@ select set_config('request.jwt.claims',
   '{"sub": "a0000000-0000-0000-0000-000000000001", "role": "authenticated"}', true);
 
 select throws_ok(
-  format($$ select public.approve_application(%L, 'c0000000-0000-0000-0000-000000000001') $$,
+  format($$ select public.approve_application(%L, p_cohort => 'c0000000-0000-0000-0000-000000000001') $$,
          current_setting('test.chi')),
   '42501', null, 'a deactivated admin loses their access on the next request, token or not');
 
@@ -311,7 +311,7 @@ select throws_ok(
             values (%L, 100, 'cash', 'FORGED-1') $$, current_setting('test.invoice')),
   '42501', null, 'the worker cannot record a cash or transfer payment');
 
-select throws_ok($$ select public.approve_application(gen_random_uuid(), gen_random_uuid()) $$,
+select throws_ok($$ select public.approve_application(gen_random_uuid()) $$,
   '42501', null, 'the worker cannot approve applications');
 
 select throws_ok(

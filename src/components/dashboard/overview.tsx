@@ -30,7 +30,7 @@ function persist(prefs: OverviewPrefs) {
 function summary(s: OverviewStats, isAdmin: boolean) {
 	return [
 		isAdmin && `${formatCount(s.newApplications)} new applications`,
-		`${formatCount(s.students)} students`,
+		`${formatCount(s.students)} active students`,
 		`${formatCount(s.activeCohorts)} active cohorts`,
 		`${formatCount(s.courses)} courses`,
 	]
@@ -108,7 +108,7 @@ export function Overview({
 					/>
 				) : null}
 				<StatCard
-					label="Students"
+					label="Active students"
 					value={formatCount(stats.students)}
 					Icon={UsersIcon}
 					tone="success"

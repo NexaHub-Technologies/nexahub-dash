@@ -1,9 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /* End-to-end tests run a dev server on :3030 against a Neon branch (its
-   DATABASE_URL, NEON_AUTH_BASE_URL and DATABASE_OWNER_URL in the env). Sign-in
-   links are read from the branch's neon_auth tables (e2e/sign-in-link.ts), so
-   the whole magic-link flow is exercised, not stubbed. */
+   DATABASE_URL and NEON_AUTH_BASE_URL in .env), signing in with real Neon
+   Auth as the admin bootstrap-admin.ts made (E2E_ADMIN_EMAIL and
+   E2E_ADMIN_PASSWORD). */
 // the same .env the dev server reads (CI writes one per run)
 try {
 	process.loadEnvFile(".env");
@@ -11,8 +11,8 @@ try {
 
 export default defineConfig({
 	testDir: "./e2e",
-	/* one at a time: the tests share the admin, and each clears the
-	   branch's outstanding sign-in links */
+	/* one at a time: the tests share the admin, and Neon Auth rate-limits
+	   sign-ins from one address */
 	fullyParallel: false,
 	workers: 1,
 	forbidOnly: !!process.env.CI,

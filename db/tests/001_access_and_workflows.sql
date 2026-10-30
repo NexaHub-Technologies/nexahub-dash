@@ -12,7 +12,7 @@ set local search_path = public, tap;
 -- on Neon the owner isn't a superuser, so it may only impersonate roles it is
 -- a member of; the grant is rolled back with everything else
 grant anon, authenticated, worker to current_user with inherit false, set true;
-select plan(49);
+select plan(45);
 
 -- ── fixtures (as owner) ────────────────────────────────────────────────
 
@@ -86,9 +86,6 @@ $$, '23514', null, 'a malformed email is rejected by the database, not just the 
 
 select throws_ok($$ select public.approve_application(gen_random_uuid(), gen_random_uuid()) $$,
   '42501', null, 'the website cannot call approve_application');
-
-select ok(public.can_sign_in(' Ife@Tests.Invalid '), 'active staff may be sent a sign-in link');
-select ok(not public.can_sign_in('stranger@example.com'), 'a stranger may not');
 
 reset role;
 select set_config('test.ada', (select id::text from public.applications where full_name = 'Ada Obi'), true);
@@ -287,12 +284,6 @@ select throws_ok(
   $$ select private.enqueue('welcome', '{}', 'forged', p_staff => 'a0000000-0000-0000-0000-000000000002') $$,
   '42501', null, 'signed-in users cannot queue messages directly');
 
-reset role;
-set local role anon;
-select ok(not public.can_sign_in('head@tests.invalid'), 'deactivated staff are not sent sign-in links');
-set local role worker;
-select throws_ok($$ select public.can_sign_in('ife@tests.invalid') $$,
-  '42501', null, 'only the sign-in form may ask who is staff');
 
 -- ── the worker, as the Neon Function ───────────────────────────────────
 

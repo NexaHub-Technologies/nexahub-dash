@@ -1,21 +1,18 @@
 import { expect, test } from "./fixtures";
-import { ADMIN, openNav, signInAs } from "./session";
-import { forgetSignInLinks, signInLink } from "./sign-in-link";
+import { ADMIN, ADMIN_PASSWORD, openNav, signInAs } from "./session";
 
-test.beforeEach(async () => {
-	await forgetSignInLinks();
-});
+test.describe.configure({ timeout: 120_000 });
 
 test("signed-out visitors are sent to the login page", async ({ page }) => {
 	await page.goto("/");
 	await expect(page).toHaveURL(/\/login$/);
 });
 
-test("staff sign in with an emailed link and land on the overview", async ({
+test("the admin signs in with a password, lands on the overview and signs out", async ({
 	page,
-	baseURL,
 }) => {
-	await signInAs(page, baseURL ?? "", ADMIN);
+	await signInAs(page, ADMIN, ADMIN_PASSWORD);
+	await expect(page).toHaveURL("/");
 	await expect(page.getByRole("heading", { level: 1 })).toHaveText(
 		"Good to see you, Admin.",
 	);
@@ -28,15 +25,22 @@ test("staff sign in with an emailed link and land on the overview", async ({
 	await expect(page).toHaveURL(/\/login$/);
 });
 
-test("someone who isn't staff is told the same thing and is sent no link", async ({
+test("a wrong password is refused and the email is kept", async ({ page }) => {
+	await signInAs(page, ADMIN, "not-the-password-123");
+	await expect(page).toHaveURL(/\/login\?/);
+	await expect(page.getByRole("alert")).toHaveText(
+		"That email and password don't match.",
+	);
+	await expect(page.getByLabel("Email")).toHaveValue(ADMIN);
+	await page.goto("/");
+	await expect(page).toHaveURL(/\/login$/);
+});
+
+test("an unknown email gets the same answer as a wrong password", async ({
 	page,
-	baseURL,
 }) => {
-	await page.goto("/login");
-	await page.getByLabel("Work email").fill("stranger@example.com");
-	await page.getByRole("button", { name: "Email me a sign-in link" }).click();
-	await expect(page.getByText("a sign-in link is on its way")).toBeVisible();
-	await expect(
-		signInLink("stranger@example.com", baseURL ?? ""),
-	).rejects.toThrow();
+	await signInAs(page, "stranger@example.com", "whatever-it-is-123");
+	await expect(page.getByRole("alert")).toHaveText(
+		"That email and password don't match.",
+	);
 });

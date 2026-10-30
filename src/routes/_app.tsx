@@ -5,7 +5,7 @@ import {
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { LayoutDashboardIcon, LogOutIcon, UsersIcon } from "lucide-react";
+import { LayoutDashboardIcon, LogOutIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
@@ -40,10 +40,12 @@ export const Route = createFileRoute("/_app")({
 
 /* sections appear here as each build phase lands; `admin` ones are hidden
    from instructors (their routes refuse them too) */
-const NAV = [
-	{ to: "/", label: "Overview", icon: LayoutDashboardIcon, admin: false },
-	{ to: "/staff", label: "Staff", icon: UsersIcon, admin: true },
-] as const;
+const NAV: readonly {
+	to: "/";
+	label: string;
+	icon: typeof LayoutDashboardIcon;
+	admin: boolean;
+}[] = [{ to: "/", label: "Overview", icon: LayoutDashboardIcon, admin: false }];
 
 const initials = (name: string) =>
 	name

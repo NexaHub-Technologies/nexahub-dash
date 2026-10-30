@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppStaffRouteImport } from './routes/_app/staff'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthLinkRouteImport } from './routes/auth/link'
 import { Route as AuthSignoutRouteImport } from './routes/auth/signout'
@@ -29,6 +30,11 @@ const LoginRoute = LoginRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffRoute = AppStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
   getParentRoute: () => AppRoute,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -55,6 +61,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/staff': typeof AppStaffRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/link': typeof AuthLinkRoute
   '/auth/signout': typeof AuthSignoutRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/staff': typeof AppStaffRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/link': typeof AuthLinkRoute
   '/auth/signout': typeof AuthSignoutRoute
@@ -72,6 +80,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/staff': typeof AppStaffRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/link': typeof AuthLinkRoute
   '/auth/signout': typeof AuthSignoutRoute
@@ -83,6 +92,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/staff'
     | '/auth/callback'
     | '/auth/link'
     | '/auth/signout'
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/staff'
     | '/auth/callback'
     | '/auth/link'
     | '/auth/signout'
@@ -99,6 +110,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/login'
+    | '/_app/staff'
     | '/auth/callback'
     | '/auth/link'
     | '/auth/signout'
@@ -138,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/staff': {
+      id: '/_app/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof AppStaffRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -170,10 +189,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppStaffRoute: typeof AppStaffRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppStaffRoute: AppStaffRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

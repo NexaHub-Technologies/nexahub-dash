@@ -4,6 +4,8 @@ import {
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
+import { Toaster } from "#/components/ui/toast";
+import { TooltipProvider } from "#/components/ui/tooltip";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -33,7 +35,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{children}
+				<TooltipProvider>
+					<Toaster>{children}</Toaster>
+				</TooltipProvider>
 				<Scripts />
 			</body>
 		</html>

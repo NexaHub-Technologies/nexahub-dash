@@ -22,6 +22,12 @@ export async function requestLoginLink(
 		return rows[0]?.ok === true;
 	});
 	if (!allowed) return "sent";
+	return (await sendSignInLink(email, origin)) ? "sent" : "failed";
+}
+
+/* Asks Neon Auth to email a magic link. Callers must already know the
+   address belongs to active staff. */
+export async function sendSignInLink(email: string, origin: string) {
 	const { error } = await neonAuth().signIn.magicLink({
 		email,
 		callbackURL: `${origin}/auth/callback`,
@@ -35,7 +41,6 @@ export async function requestLoginLink(
 			error.code,
 			error.message,
 		);
-		return "failed";
 	}
-	return "sent";
+	return !error;
 }

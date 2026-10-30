@@ -264,6 +264,8 @@ select is(
 
 -- ── access ends the moment it is removed ────────────────────────────────
 
+-- another admin's doing, as far as the database can tell: nobody signed in
+select set_config('request.jwt.claims', '', true);
 update public.staff set active = false where id = 'a0000000-0000-0000-0000-000000000001';
 insert into public.applications
   (course_slug, full_name, email, phone, gender, employment, mode,

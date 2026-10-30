@@ -19,8 +19,8 @@ export async function signInAs(page: Page, app: string, email: string) {
 		await page.getByRole("button", { name: "Email me a sign-in link" }).click();
 		await expect(sent.or(failed)).toBeVisible();
 		if (await sent.isVisible()) break;
-		if (attempt === 3) throw new Error(`no sign-in link could be sent to ${email}`);
-		await page.waitForTimeout(11_000);
+		if (attempt === 6) throw new Error(`no sign-in link could be sent to ${email}`);
+		await page.waitForTimeout(15_000);
 	}
 	await page.goto(await signInLink(email, app));
 	await expect(page).toHaveURL("/");

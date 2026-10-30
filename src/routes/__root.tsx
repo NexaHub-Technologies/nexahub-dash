@@ -4,6 +4,7 @@ import {
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Toaster } from "#/components/ui/toast";
 import { TooltipProvider } from "#/components/ui/tooltip";
 import appCss from "../styles.css?url";
@@ -24,9 +25,18 @@ export const Route = createRootRoute({
 			{ rel: "stylesheet", href: appCss },
 		],
 	}),
-	component: Outlet,
+	component: Root,
 	shellComponent: RootDocument,
 });
+
+/* Marks the page once React has taken over, so the end-to-end tests can wait
+   for buttons to work instead of clicking server-rendered HTML. */
+function Root() {
+	useEffect(() => {
+		document.documentElement.dataset.hydrated = "";
+	}, []);
+	return <Outlet />;
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (

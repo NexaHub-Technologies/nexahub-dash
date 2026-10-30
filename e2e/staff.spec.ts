@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { ADMIN, forgetPeople, openNav, signInAs } from "./session";
+import { ADMIN, forgetPeople, openNav, signInAs, visit } from "./session";
 import { forgetSignInLinks } from "./sign-in-link";
 
 /* one address per project, so desktop and mobile runs don't collide */
@@ -57,7 +57,7 @@ test("an admin invites an instructor, changes their role and deactivates them", 
 
 test("an admin can't take away their own access", async ({ page, baseURL }) => {
 	await signInAs(page, baseURL ?? "", ADMIN);
-	await page.goto("/staff");
+	await visit(page, "/staff");
 	const me = page.getByRole("row", { name: /\(you\)/ });
 	await expect(me.getByRole("combobox")).toBeDisabled();
 	await expect(me.getByRole("button", { name: "Deactivate" })).toHaveCount(0);
@@ -70,7 +70,7 @@ test("an instructor can't open the staff screen", async ({
 	const email = invitee(info.project.name);
 	// set up as the admin, then sign in as the new instructor
 	await signInAs(page, baseURL ?? "", ADMIN);
-	await page.goto("/staff");
+	await visit(page, "/staff");
 	await page.getByRole("button", { name: "Invite" }).click();
 	const dialog = page.getByRole("dialog", { name: "Invite a member of staff" });
 	await dialog.getByLabel("Full name").fill("Ngozi Test");

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "kysely";
 import { getStaff } from "./auth";
+import { courseMetrics } from "./catalogue";
 import { withStaff } from "./db.server";
 
 /* The headline figures shown above every page, and the dashboard's queues
@@ -72,7 +73,12 @@ export type Dashboard = {
 		starts_at: string;
 		cancelled: boolean;
 	}[];
-	courses: { slug: string; title: string; modules: number }[];
+	courses: {
+		slug: string;
+		title: string;
+		applicants: number;
+		activeStudents: number;
+	}[];
 };
 
 export const getDashboard = createServerFn({ method: "GET" }).handler(
@@ -131,18 +137,8 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 				.limit(6)
 				.execute();
 
-			const courses = await db
-				.selectFrom("courses as c")
-				.leftJoin("course_modules as m", "m.course_slug", "c.slug")
-				.select([
-					"c.slug",
-					"c.title",
-					(eb) => eb.fn.count<string>("m.n").as("modules"),
-				])
-				.groupBy(["c.slug", "c.title"])
-				.orderBy("c.title")
-				.limit(5)
-				.execute();
+			// the busiest courses: most students now, then most applicants
+			const courses = (await courseMetrics(db)).slice(0, 5);
 
 			return {
 				attention: {
@@ -165,7 +161,12 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 					...s,
 					starts_at: new Date(s.starts_at).toISOString(),
 				})),
-				courses: courses.map((c) => ({ ...c, modules: Number(c.modules) })),
+				courses: courses.map(({ slug, title, applicants, activeStudents }) => ({
+					slug,
+					title,
+					applicants,
+					activeStudents,
+				})),
 			};
 		});
 	},

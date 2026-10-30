@@ -21,8 +21,20 @@
   --danger: #b42318;
   --ok: #067647;
   --line: rgba(49, 16, 73, 0.12);
+  --line-soft: rgba(49, 16, 73, 0.07);
 
-  --background: var(--paper);
+  /* status tones for icon chips and badges: a strong colour on a soft wash */
+  --success-soft: #e6f4ec;
+  --warning: #a15c07;
+  --warning-soft: #fdf1dc;
+  --danger-soft: #fdecea;
+  --info: #175cd3;
+  --info-soft: #e8f0fd;
+  --brand-soft: var(--violet-tint);
+
+  /* The console follows the DistressNow admin layout: the sidebar sits on
+     the paper colour and the working area is a lighter inset panel. */
+  --background: #fcf9fb;
   --foreground: var(--ink);
   --card: #ffffff;
   --card-foreground: var(--ink);
@@ -43,12 +55,14 @@
   --ring: var(--violet);
   --radius: 0.625rem;
 
-  --sidebar: #ffffff;
+  --sidebar: var(--paper);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--violet);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--violet-tint);
-  --sidebar-accent-foreground: var(--violet-deep);
+  /* hover is a soft wash; the active section is a solid ink pill, as in
+     the DistressNow console (set on the nav items, app-sidebar.tsx) */
+  --sidebar-accent: var(--paper-2);
+  --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
   --sidebar-ring: var(--violet);
 }
@@ -73,6 +87,17 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-brand: var(--violet);
+  --color-brand-soft: var(--brand-soft);
+  --color-ink: var(--ink);
+  --color-line-soft: var(--line-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

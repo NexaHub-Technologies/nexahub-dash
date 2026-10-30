@@ -1,4 +1,5 @@
 import { createRouter } from "@tanstack/react-router";
+import { PagePending } from "./components/dashboard/page-pending";
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
@@ -7,6 +8,8 @@ export function getRouter() {
 		scrollRestoration: true,
 		defaultPreload: "intent",
 		defaultPreloadStaleTime: 0,
+		defaultPendingComponent: PagePending,
+		defaultPendingMs: 400,
 	});
 }
 

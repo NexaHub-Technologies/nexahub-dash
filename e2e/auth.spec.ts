@@ -13,13 +13,12 @@ test("the admin signs in with a password, lands on the overview and signs out", 
 }) => {
 	await signInAs(page, ADMIN, ADMIN_PASSWORD);
 	await expect(page).toHaveURL("/");
-	await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-		"Good to see you, Admin.",
-	);
-	await expect(page.getByText("New applications")).toBeVisible();
+	await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dashboard");
+	await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+	await expect(page.getByText("New applications").first()).toBeVisible();
 
 	await openNav(page);
-	await page.getByRole("button", { name: "Sign out" }).click();
+	await page.getByRole("button", { name: "Logout" }).click();
 	await expect(page).toHaveURL(/\/login$/);
 	await page.goto("/");
 	await expect(page).toHaveURL(/\/login$/);

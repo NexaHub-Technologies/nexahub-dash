@@ -1,32 +1,26 @@
 import {
 	createFileRoute,
-	Link,
 	Outlet,
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { LayoutDashboardIcon, LogOutIcon } from "lucide-react";
+import { AppSidebar } from "#/components/dashboard/app-sidebar";
+import { currentSection } from "#/components/dashboard/nav";
+import { Overview } from "#/components/dashboard/overview";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
-import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
 import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarGroup,
-	SidebarGroupContent,
-	SidebarHeader,
 	SidebarInset,
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
 	SidebarProvider,
 	SidebarTrigger,
-	useSidebar,
 } from "#/components/ui/sidebar";
 import { getStaff } from "../lib/auth";
+import { getOverviewStats } from "../lib/overview";
+import { getShellPrefs } from "../lib/shell";
 
-/* Every signed-in screen sits under this layout. The check runs on each
+/* Every signed-in screen sits under this layout, which follows the
+   DistressNow admin console: an inset sidebar, a sticky header naming the
+   section, the overview figures, then the page. The staff check runs on each
    navigation, so someone deactivated mid-session is sent to the login page
    the next time they move. */
 export const Route = createFileRoute("/_app")({
@@ -35,17 +29,15 @@ export const Route = createFileRoute("/_app")({
 		if (!staff) throw redirect({ to: "/login" });
 		return { staff };
 	},
+	loader: async () => {
+		const [stats, prefs] = await Promise.all([
+			getOverviewStats(),
+			getShellPrefs(),
+		]);
+		return { stats, prefs };
+	},
 	component: AppShell,
 });
-
-/* sections appear here as each build phase lands; `admin` ones are hidden
-   from instructors (their routes refuse them too) */
-const NAV: readonly {
-	to: "/";
-	label: string;
-	icon: typeof LayoutDashboardIcon;
-	admin: boolean;
-}[] = [{ to: "/", label: "Overview", icon: LayoutDashboardIcon, admin: false }];
 
 const initials = (name: string) =>
 	name
@@ -54,88 +46,46 @@ const initials = (name: string) =>
 		.map((w) => w[0]?.toUpperCase())
 		.join("");
 
-/* On a phone the sidebar is a drawer over the page; it closes once a section
-   is chosen, or the new page would sit behind it. */
-function NavItem({
-	item,
-	active,
-}: {
-	item: (typeof NAV)[number];
-	active: boolean;
-}) {
-	const { setOpenMobile } = useSidebar();
-	return (
-		<SidebarMenuItem>
-			<SidebarMenuButton
-				isActive={active}
-				render={<Link to={item.to} onClick={() => setOpenMobile(false)} />}
-			>
-				<item.icon />
-				<span>{item.label}</span>
-			</SidebarMenuButton>
-		</SidebarMenuItem>
-	);
-}
-
 function AppShell() {
 	const { staff } = Route.useRouteContext();
+	const { stats, prefs } = Route.useLoaderData();
 	const { pathname } = useLocation();
-	const nav = NAV.filter((n) => !n.admin || staff.role === "admin");
-	const current = nav.find((n) => n.to === pathname)?.label ?? "NexaHub Dash";
 	return (
-		<SidebarProvider>
-			<Sidebar>
-				<SidebarHeader>
-					<div className="flex items-center gap-2.5 px-2 py-1.5">
-						<img src="/logo-main.svg" alt="" className="size-7" />
-						<span className="font-heading font-bold">NexaHub Dash</span>
-					</div>
-				</SidebarHeader>
-				<SidebarContent>
-					<SidebarGroup>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								{nav.map((n) => (
-									<NavItem key={n.to} item={n} active={pathname === n.to} />
-								))}
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
-				</SidebarContent>
-				<SidebarFooter>
-					<div className="flex items-center gap-3 px-2 py-1.5">
+		<SidebarProvider
+			defaultOpen={prefs.sidebarOpen}
+			className="lg:h-svh lg:overflow-hidden"
+		>
+			<AppSidebar role={staff.role} />
+			<SidebarInset className="min-w-0 lg:overflow-y-auto lg:overscroll-contain">
+				<header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:gap-3">
+					<SidebarTrigger className="-ml-1" />
+					<Separator
+						orientation="vertical"
+						className="mr-1 data-vertical:h-4 data-vertical:self-center"
+					/>
+					<span className="truncate text-sm font-medium">
+						{currentSection(pathname)}
+					</span>
+					<div className="ml-auto flex items-center gap-2">
 						<Avatar>
 							<AvatarFallback>{initials(staff.full_name)}</AvatarFallback>
 						</Avatar>
-						<div className="flex min-w-0 flex-col text-sm">
-							<span className="truncate font-semibold">{staff.full_name}</span>
-							<span className="text-muted-foreground capitalize">
-								{staff.role}
+						<span className="hidden leading-tight sm:block">
+							<span className="block text-sm capitalize">{staff.role}</span>
+							<span className="block text-xs text-muted-foreground">
+								{staff.email}
 							</span>
-						</div>
+						</span>
 					</div>
-					{/* a plain form POST, so signing out works before the JavaScript loads */}
-					<form method="post" action="/auth/signout">
-						<Button
-							type="submit"
-							variant="ghost"
-							className="w-full justify-start"
-						>
-							<LogOutIcon data-icon="inline-start" />
-							Sign out
-						</Button>
-					</form>
-				</SidebarFooter>
-			</Sidebar>
-			<SidebarInset>
-				<header className="flex h-14 items-center gap-2 border-b px-4">
-					<SidebarTrigger />
-					<Separator orientation="vertical" className="h-5" />
-					<span className="text-sm font-semibold">{current}</span>
 				</header>
-				<main className="flex min-w-0 flex-col gap-6 p-4 md:p-8">
+				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-5 p-4 lg:p-6">
+					<Overview
+						stats={stats}
+						isAdmin={staff.role === "admin"}
+						initialPrefs={prefs.overview}
+					/>
 					<Outlet />
-				</main>
+				</div>
 			</SidebarInset>
 		</SidebarProvider>
 	);

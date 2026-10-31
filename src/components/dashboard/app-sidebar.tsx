@@ -117,10 +117,14 @@ export function AppSidebar({
 							}
 						>
 							<span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-card">
-								<img src="/logo-main.svg" alt="" className="size-6" />
+								<img
+									src="/logo-main.svg"
+									alt=""
+									className="brand-mark size-6"
+								/>
 							</span>
 							<span className="grid leading-tight">
-								<span className="truncate font-heading font-semibold">
+								<span className="truncate font-heading font-extrabold tracking-tight">
 									NexaHubTech
 								</span>
 								<span className="truncate text-xs text-muted-foreground">

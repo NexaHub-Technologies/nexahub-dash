@@ -39,11 +39,13 @@ function Login() {
 	const { error, email } = Route.useSearch();
 	const invalid = error ? true : undefined;
 	return (
-		<main className="grid min-h-screen place-items-center p-4">
-			<Card className="w-full max-w-sm">
+		<main className="stage login-stage grid place-items-center p-4">
+			<Card className="login-card w-full max-w-sm">
 				<CardHeader>
 					<img src="/logo-main.svg" alt="" className="size-9" />
-					<CardTitle className="text-2xl">NexaHubTech Dash</CardTitle>
+					<CardTitle className="font-heading text-3xl font-extrabold tracking-tight">
+						NexaHubTech <span className="hot-on-light-text">Dash</span>
+					</CardTitle>
 					<CardDescription>Sign in to the staff console</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -80,7 +82,9 @@ function Login() {
 									autoFocus={Boolean(email)}
 								/>
 							</Field>
-							<Button type="submit">Sign in</Button>
+							<Button type="submit" size="lg" className="btn-hot">
+								Sign in
+							</Button>
 						</FieldGroup>
 					</form>
 				</CardContent>

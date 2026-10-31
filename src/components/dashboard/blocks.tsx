@@ -74,7 +74,7 @@ export function StatCard({
 				) : null}
 			</div>
 			<div className="flex flex-col gap-0.5">
-				<span className="font-heading text-3xl font-semibold tracking-tight tabular-nums">
+				<span className="stat-value w-fit font-heading text-4xl font-extrabold tracking-tight tabular-nums">
 					{value}
 				</span>
 				<span className="text-sm text-muted-foreground">{label}</span>
@@ -86,12 +86,7 @@ export function StatCard({
 	);
 	const cls = "flex h-full flex-col gap-4 p-4 sm:p-5";
 	return (
-		<Card
-			className={cn(
-				"py-0 transition-shadow",
-				to && "group/stat hover:shadow-md",
-			)}
-		>
+		<Card className={cn("py-0", to && "group/stat card-lift")}>
 			{to ? (
 				<Link
 					to={to}
@@ -134,7 +129,7 @@ export function Panel({
 		<Card className={cn("flex min-w-0 flex-col gap-4 p-5 sm:p-6", className)}>
 			<div className="flex items-start justify-between gap-4">
 				<div className="flex flex-col gap-0.5">
-					<h2 className="text-lg font-semibold">{title}</h2>
+					<h2 className="text-lg font-bold">{title}</h2>
 					{description ? (
 						<p className="text-sm text-muted-foreground">{description}</p>
 					) : null}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -7,8 +7,10 @@
 
 /* The website's palette (nexahubtech, src/styles.css), given to shadcn's
    semantic tokens: components say bg-primary or text-muted-foreground and get
-   NexaHubTech violet and ink. A working tool reads the brand through colour and
-   type, not decoration. Light only, like the website. */
+   NexaHubTech violet and ink. The website's bolder voice comes with it: the
+   dark stage (the sidebar's frame, the overview, the sign-in page), heavy
+   display type, and the hot rose → peach → yellow accent, which is only ever
+   set on the stage, where it clears contrast. Pages stay light to work in. */
 :root {
   --paper: #f6eff4;
   --paper-2: #ece0e9;
@@ -22,6 +24,11 @@
   --ok: #067647;
   --line: rgba(49, 16, 73, 0.12);
   --line-soft: rgba(49, 16, 73, 0.07);
+  --warm: #f06ba8;
+  --hot: linear-gradient(100deg, #f06ba8 0%, #ff9a62 55%, #ffd25a 100%);
+  /* gradient text on the light ground, where rose and yellow are too pale */
+  --hot-on-light: linear-gradient(100deg, #6a2cad 0%, #a8287a 100%);
+  --stage: #1a0828;
 
   /* status tones for icon chips and badges: a strong colour on a soft wash */
   --success-soft: #e6f4ec;
@@ -32,8 +39,9 @@
   --info-soft: #e8f0fd;
   --brand-soft: var(--violet-tint);
 
-  /* The console follows the DistressNow admin layout: the sidebar sits on
-     the paper colour and the working area is a lighter inset panel. */
+  /* The console follows the DistressNow admin layout: the sidebar is the
+     frame and the working area is a lighter inset panel. The frame is the
+     website's stage, so the page sits on it like a sheet on a dark desk. */
   --background: #fcf9fb;
   --foreground: var(--ink);
   --card: #ffffff;
@@ -55,16 +63,16 @@
   --ring: var(--violet);
   --radius: 0.625rem;
 
-  --sidebar: var(--paper);
-  --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--violet);
-  --sidebar-primary-foreground: #ffffff;
-  /* hover is a soft wash; the active section is a solid ink pill, as in
-     the DistressNow console (set on the nav items, app-sidebar.tsx) */
-  --sidebar-accent: var(--paper-2);
-  --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: var(--line);
-  --sidebar-ring: var(--violet);
+  --sidebar: var(--stage);
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: var(--warm);
+  --sidebar-primary-foreground: var(--stage);
+  /* hover is a faint wash; the active section is a solid white pill, as the
+     website's header marks the page you are on (.nav-tab below) */
+  --sidebar-accent: rgb(255 255 255 / 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.14);
+  --sidebar-ring: var(--warm);
 }
 
 @theme inline {
@@ -125,7 +133,182 @@
   }
   h1, h2, h3 {
     @apply font-heading;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
+  }
+}
+
+/* ── the stage ────────────────────────────────────────────────────────────
+   The website's dark surface (nexahubtech, .page-head and .footer). Rather
+   than restyle everything on it, it redefines the colour tokens for its own
+   subtree: text, lines, cards and muted copy all resolve light-on-dark, so
+   the shadcn components inside need no rules of their own. */
+[data-slot='sidebar'],
+.stage {
+  --ink: #ffffff;
+  --ink-soft: #e6d9f0;
+  --foreground: #ffffff;
+  --card: rgb(255 255 255 / 0.07);
+  --card-foreground: #ffffff;
+  --muted: rgb(255 255 255 / 0.07);
+  --muted-foreground: #bfaecb;
+  --paper-2: rgb(255 255 255 / 0.08);
+  --line: rgb(255 255 255 / 0.16);
+  --line-soft: rgb(255 255 255 / 0.09);
+  --border: var(--line);
+  --ring: var(--warm);
+  --violet: var(--warm);
+  color: var(--foreground);
+}
+
+/* the stage's light: a violet wash from the lower left */
+[data-slot='sidebar-inner'],
+[data-slot='sidebar-wrapper']:has([data-variant='inset']) {
+  background:
+    radial-gradient(120% 70% at 0% 100%, rgb(106 44 173 / 0.5), transparent 60%),
+    var(--stage);
+}
+[data-slot='sidebar-inner'] {
+  background-attachment: fixed;
+}
+
+/* the brand mark is a dark fill; lift it off the stage */
+[data-slot='sidebar'] .brand-mark {
+  filter: brightness(0) invert(1);
+}
+
+.stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(110% 90% at 0% 100%, rgb(106 44 173 / 0.55), transparent 55%),
+    var(--stage);
+  box-shadow: 0 30px 70px -36px rgb(26 8 40 / 0.85);
+}
+/* the sign-in page only: a turning burst of hard-edged rays and a warm
+   core, off to the right. The cards on the stage go without, so figures
+   are read on a plain ground. Only transforms and opacity animate. */
+.login-stage::before,
+.login-stage::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 86%;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.login-stage::before {
+  width: 220vmax;
+  height: 220vmax;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgb(240 107 168 / 0.15) 0deg 5deg,
+    transparent 5deg 15deg,
+    rgb(160 100 230 / 0.12) 15deg 19deg,
+    transparent 19deg 30deg
+  );
+  mask-image: radial-gradient(closest-side, #000 0%, rgb(0 0 0 / 0.55) 16%, transparent 34%);
+  animation: rays-turn 110s linear infinite;
+}
+.login-stage::after {
+  width: min(60vw, 520px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(255 210 90 / 0.45),
+    rgb(255 154 98 / 0.28) 24%,
+    rgb(240 107 168 / 0.2) 48%,
+    transparent 100%
+  );
+  animation: core-pulse 6s ease-in-out infinite;
+}
+@keyframes rays-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes core-pulse {
+  50% {
+    opacity: 0.7;
+    scale: 1.08;
+  }
+}
+
+.hot-text {
+  background: var(--hot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hot-on-light-text {
+  background: var(--hot-on-light);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* figures on the stage take the hot gradient, as the website's numbers do */
+.stage .stat-value {
+  background: var(--hot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* the one action on a stage-like screen: the hot gradient, dark heavy text */
+.btn-hot {
+  background: var(--hot);
+  color: var(--stage);
+  font-weight: 800;
+  box-shadow: 0 14px 30px -14px rgb(255 154 98 / 0.8);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.btn-hot:hover {
+  background: var(--hot);
+  transform: translateY(-2px);
+}
+
+/* a linked card lands with a hard shadow when hovered, as on the website */
+.card-lift {
+  transition:
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 200ms ease;
+}
+.card-lift:hover,
+.card-lift:has(:focus-visible) {
+  transform: translate(-3px, -4px);
+  box-shadow: 7px 8px 0 var(--violet);
+}
+
+/* the sign-in page is all stage, with the card set on it */
+.login-stage {
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100svh;
+}
+.login-stage::before,
+.login-stage::after {
+  left: 78%;
+  top: 40%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-stage::before,
+  .login-stage::after {
+    animation: none;
+  }
+  .card-lift,
+  .btn-hot {
+    transition: none;
+  }
+  .card-lift:hover,
+  .card-lift:has(:focus-visible),
+  .btn-hot:hover {
+    transform: none;
   }
 }
 
@@ -165,7 +348,7 @@
     padding: 0.5rem 0.625rem;
     border-radius: 0.875rem;
     /* a faint surface, so the column reads as filled, not as gaps */
-    background: rgb(255 255 255 / 0.42);
+    background: rgb(255 255 255 / 0.05);
     box-shadow: inset 0 0 0 1px var(--line-soft);
     color: var(--sidebar-foreground);
     outline: none;
@@ -176,15 +359,15 @@
       transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .nav-tab:hover {
-    background: rgb(255 255 255 / 0.8);
+    background: rgb(255 255 255 / 0.1);
   }
   .nav-tab:focus-visible {
     box-shadow: 0 0 0 2px var(--sidebar-ring);
   }
   .nav-tab[data-active] {
-    background: var(--ink);
-    color: #ffffff;
-    box-shadow: 0 8px 18px -10px rgb(49 16 73 / 0.6);
+    background: #ffffff;
+    color: var(--stage);
+    box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.7);
   }
 
   .nav-tab-icon {
@@ -207,7 +390,8 @@
     height: 1.125rem;
   }
   .nav-tab[data-active] .nav-tab-icon {
-    background: rgb(255 255 255 / 0.14);
+    background: var(--hot);
+    color: var(--stage);
     box-shadow: none;
   }
 
@@ -226,14 +410,14 @@
   }
   .nav-tab-label {
     font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 700;
   }
   .nav-tab-hint {
     font-size: 0.75rem;
     color: var(--muted-foreground);
   }
   .nav-tab[data-active] .nav-tab-hint {
-    color: rgb(255 255 255 / 0.72);
+    color: rgb(26 8 40 / 0.66);
   }
 
   .nav-tab-count {
@@ -244,15 +428,15 @@
     margin-left: auto;
     padding: 0 0.375rem;
     border-radius: 999px;
-    background: var(--violet);
-    color: #ffffff;
+    background: var(--hot);
+    color: var(--stage);
     font-size: 0.6875rem;
-    font-weight: 700;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
   }
   .nav-tab[data-active] .nav-tab-count {
-    background: #ffffff;
-    color: var(--ink);
+    background: var(--stage);
+    color: #ffffff;
   }
   .nav-tab-dot {
     display: none;
@@ -284,7 +468,7 @@
     transform: translateX(calc(var(--tab-tuck) * -1));
   }
   [data-collapsible='icon'] .nav-tab:hover {
-    background: var(--paper-2);
+    background: rgb(255 255 255 / 0.14);
     color: var(--ink);
     transform: translateX(-0.125rem);
   }
@@ -295,7 +479,8 @@
     z-index: 1;
     border-color: transparent;
     background: var(--background);
-    color: var(--ink);
+    /* the page's ink: the tab belongs to the page, not the stage */
+    color: #311049;
     box-shadow: -3px 2px 8px -4px rgb(49 16 73 / 0.25);
     /* forward, and a hair into the page so the seam disappears */
     transform: translateX(1px);
@@ -333,8 +518,8 @@
     box-shadow: none;
   }
   [data-collapsible='icon'] .nav-tab[data-active] .nav-tab-icon {
-    background: var(--violet-tint);
-    color: var(--violet);
+    background: var(--hot);
+    color: var(--stage);
   }
   [data-collapsible='icon'] .nav-tab-text,
   [data-collapsible='icon'] .nav-tab-count {
@@ -348,11 +533,11 @@
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 999px;
-    background: var(--violet);
-    box-shadow: 0 0 0 2px var(--paper-2);
+    background: var(--warm);
+    box-shadow: 0 0 0 2px var(--stage);
   }
   [data-collapsible='icon'] .nav-tab[data-active] .nav-tab-dot {
-    box-shadow: 0 0 0 2px var(--violet-tint);
+    box-shadow: 0 0 0 2px var(--background);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -361,4 +546,20 @@
       transition: none;
     }
   }
+}
+
+/* the sign-in card is the page's own light surface, set on the stage */
+.login-card {
+  --ink: #311049;
+  --foreground: #311049;
+  --card: #ffffff;
+  --card-foreground: #311049;
+  --muted-foreground: #6f627b;
+  --line: rgba(49, 16, 73, 0.12);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: #6a2cad;
+  --violet: #6a2cad;
+  color: var(--foreground);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.7);
 }

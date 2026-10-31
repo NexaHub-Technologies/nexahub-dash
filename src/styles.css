@@ -186,10 +186,11 @@
     var(--stage);
   box-shadow: 0 30px 70px -36px rgb(26 8 40 / 0.85);
 }
-/* a turning burst of hard-edged rays and a warm core, off to the right;
-   only transforms and opacity animate */
-.stage::before,
-.stage::after {
+/* the sign-in page only: a turning burst of hard-edged rays and a warm
+   core, off to the right. The cards on the stage go without, so figures
+   are read on a plain ground. Only transforms and opacity animate. */
+.login-stage::before,
+.login-stage::after {
   content: '';
   position: absolute;
   z-index: -1;
@@ -198,7 +199,7 @@
   translate: -50% -50%;
   pointer-events: none;
 }
-.stage::before {
+.login-stage::before {
   width: 220vmax;
   height: 220vmax;
   background: repeating-conic-gradient(
@@ -211,7 +212,7 @@
   mask-image: radial-gradient(closest-side, #000 0%, rgb(0 0 0 / 0.55) 16%, transparent 34%);
   animation: rays-turn 110s linear infinite;
 }
-.stage::after {
+.login-stage::after {
   width: min(60vw, 520px);
   aspect-ratio: 1;
   border-radius: 50%;
@@ -296,8 +297,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage::before,
-  .stage::after {
+  .login-stage::before,
+  .login-stage::after {
     animation: none;
   }
   .card-lift,

@@ -14,7 +14,7 @@ export const Route = createRootRoute({
 		meta: [
 			{ charSet: "utf-8" },
 			{ name: "viewport", content: "width=device-width, initial-scale=1" },
-			{ title: "NexaHub Dash" },
+			{ title: "NexaHubTech Dash" },
 			/* a staff tool: nothing here should be indexed */
 			{ name: "robots", content: "noindex, nofollow" },
 			{ name: "theme-color", content: "#f6eff4" },

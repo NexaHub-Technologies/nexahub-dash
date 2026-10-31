@@ -7,7 +7,7 @@
 
 /* The website's palette (nexahubtech, src/styles.css), given to shadcn's
    semantic tokens: components say bg-primary or text-muted-foreground and get
-   NexaHub violet and ink. A working tool reads the brand through colour and
+   NexaHubTech violet and ink. A working tool reads the brand through colour and
    type, not decoration. Light only, like the website. */
 :root {
   --paper: #f6eff4;

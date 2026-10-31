@@ -121,7 +121,7 @@ export function AppSidebar({
 							</span>
 							<span className="grid leading-tight">
 								<span className="truncate font-heading font-semibold">
-									NexaHub
+									NexaHubTech
 								</span>
 								<span className="truncate text-xs text-muted-foreground">
 									Staff console

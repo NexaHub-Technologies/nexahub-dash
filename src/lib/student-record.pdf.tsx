@@ -15,7 +15,7 @@ import type { StudentDetail } from "./students";
 /* A student's registry record as a PDF: who they are, what they applied
    with, their courses and statuses, what they've paid and owe, and how their
    status has changed. Built on the server from the same data as their page,
-   in the NexaHub palette. */
+   in the NexaHubTech palette. */
 
 const INK = "#311049";
 const MUTE = "#6f627b";
@@ -150,7 +150,7 @@ function StudentRecord({
 	return (
 		<Document
 			title={`${st.full_name} — registry record`}
-			author="NexaHub Technologies"
+			author="NexaHubTech"
 			subject="Student registry record"
 		>
 			<Page size="A4" style={s.page}>
@@ -158,7 +158,7 @@ function StudentRecord({
 					<View style={s.brand}>
 						<Image src={logo} style={s.logo} />
 						<View>
-							<Text style={s.brandName}>NexaHub Technologies</Text>
+							<Text style={s.brandName}>NexaHubTech</Text>
 							<Text style={s.muted}>Student registry record</Text>
 						</View>
 					</View>
@@ -299,7 +299,7 @@ function StudentRecord({
 				) : null}
 
 				<View style={s.footer} fixed>
-					<Text>NexaHub Technologies · nexahubtech.company · Confidential</Text>
+					<Text>NexaHubTech · nexahubtech.company · Confidential</Text>
 					<Text
 						render={({ pageNumber, totalPages }) =>
 							`Page ${pageNumber} of ${totalPages}`

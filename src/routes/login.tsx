@@ -43,7 +43,7 @@ function Login() {
 			<Card className="w-full max-w-sm">
 				<CardHeader>
 					<img src="/logo-main.svg" alt="" className="size-9" />
-					<CardTitle className="text-2xl">NexaHub Dash</CardTitle>
+					<CardTitle className="text-2xl">NexaHubTech Dash</CardTitle>
 					<CardDescription>Sign in to the staff console</CardDescription>
 				</CardHeader>
 				<CardContent>

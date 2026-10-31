@@ -14,10 +14,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignoutRouteImport } from './routes/auth/signout'
+import { Route as FeesPaymentsDotcsvRouteImport } from './routes/fees/payments[.]csv'
 import { Route as AppApplicationsIndexRouteImport } from './routes/_app/applications/index'
 import { Route as AppApplicationsIdRouteImport } from './routes/_app/applications/$id'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
 import { Route as AppCoursesSlugRouteImport } from './routes/_app/courses/$slug'
+import { Route as AppFeesIndexRouteImport } from './routes/_app/fees/index'
+import { Route as AppFeesPaymentsRouteImport } from './routes/_app/fees/payments'
 import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
 import { Route as AppStudentsIdRouteImport } from './routes/_app/students/$id'
 import { Route as StudentsIdRecordDotpdfRouteImport } from './routes/students/$id.record[.]pdf'
@@ -46,6 +49,11 @@ const AuthSignoutRoute = AuthSignoutRouteImport.update({
   path: '/auth/signout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeesPaymentsDotcsvRoute = FeesPaymentsDotcsvRouteImport.update({
+  id: '/fees/payments.csv',
+  path: '/fees/payments.csv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppApplicationsIndexRoute = AppApplicationsIndexRouteImport.update({
   id: '/applications/',
   path: '/applications/',
@@ -64,6 +72,16 @@ const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
 const AppCoursesSlugRoute = AppCoursesSlugRouteImport.update({
   id: '/courses/$slug',
   path: '/courses/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeesIndexRoute = AppFeesIndexRouteImport.update({
+  id: '/fees/',
+  path: '/fees/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeesPaymentsRoute = AppFeesPaymentsRouteImport.update({
+  id: '/fees/payments',
+  path: '/fees/payments',
   getParentRoute: () => AppRoute,
 } as any)
 const AppStudentsIndexRoute = AppStudentsIndexRouteImport.update({
@@ -87,25 +105,31 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
+  '/fees/payments.csv': typeof FeesPaymentsDotcsvRoute
   '/applications/$id': typeof AppApplicationsIdRoute
   '/courses/$slug': typeof AppCoursesSlugRoute
+  '/fees/payments': typeof AppFeesPaymentsRoute
   '/students/$id': typeof AppStudentsIdRoute
   '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
   '/applications/': typeof AppApplicationsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
+  '/fees/': typeof AppFeesIndexRoute
   '/students/': typeof AppStudentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
+  '/fees/payments.csv': typeof FeesPaymentsDotcsvRoute
   '/': typeof AppIndexRoute
   '/applications/$id': typeof AppApplicationsIdRoute
   '/courses/$slug': typeof AppCoursesSlugRoute
+  '/fees/payments': typeof AppFeesPaymentsRoute
   '/students/$id': typeof AppStudentsIdRoute
   '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
   '/applications': typeof AppApplicationsIndexRoute
   '/courses': typeof AppCoursesIndexRoute
+  '/fees': typeof AppFeesIndexRoute
   '/students': typeof AppStudentsIndexRoute
 }
 export interface FileRoutesById {
@@ -114,13 +138,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
+  '/fees/payments.csv': typeof FeesPaymentsDotcsvRoute
   '/_app/': typeof AppIndexRoute
   '/_app/applications/$id': typeof AppApplicationsIdRoute
   '/_app/courses/$slug': typeof AppCoursesSlugRoute
+  '/_app/fees/payments': typeof AppFeesPaymentsRoute
   '/_app/students/$id': typeof AppStudentsIdRoute
   '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
   '/_app/applications/': typeof AppApplicationsIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
+  '/_app/fees/': typeof AppFeesIndexRoute
   '/_app/students/': typeof AppStudentsIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,25 +157,31 @@ export interface FileRouteTypes {
     | '/login'
     | '/auth/signin'
     | '/auth/signout'
+    | '/fees/payments.csv'
     | '/applications/$id'
     | '/courses/$slug'
+    | '/fees/payments'
     | '/students/$id'
     | '/students/$id/record.pdf'
     | '/applications/'
     | '/courses/'
+    | '/fees/'
     | '/students/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/auth/signin'
     | '/auth/signout'
+    | '/fees/payments.csv'
     | '/'
     | '/applications/$id'
     | '/courses/$slug'
+    | '/fees/payments'
     | '/students/$id'
     | '/students/$id/record.pdf'
     | '/applications'
     | '/courses'
+    | '/fees'
     | '/students'
   id:
     | '__root__'
@@ -156,13 +189,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/auth/signin'
     | '/auth/signout'
+    | '/fees/payments.csv'
     | '/_app/'
     | '/_app/applications/$id'
     | '/_app/courses/$slug'
+    | '/_app/fees/payments'
     | '/_app/students/$id'
     | '/students/$id/record.pdf'
     | '/_app/applications/'
     | '/_app/courses/'
+    | '/_app/fees/'
     | '/_app/students/'
   fileRoutesById: FileRoutesById
 }
@@ -171,6 +207,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   AuthSigninRoute: typeof AuthSigninRoute
   AuthSignoutRoute: typeof AuthSignoutRoute
+  FeesPaymentsDotcsvRoute: typeof FeesPaymentsDotcsvRoute
   StudentsIdRecordDotpdfRoute: typeof StudentsIdRecordDotpdfRoute
 }
 
@@ -211,6 +248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fees/payments.csv': {
+      id: '/fees/payments.csv'
+      path: '/fees/payments.csv'
+      fullPath: '/fees/payments.csv'
+      preLoaderRoute: typeof FeesPaymentsDotcsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/applications/': {
       id: '/_app/applications/'
       path: '/applications'
@@ -237,6 +281,20 @@ declare module '@tanstack/react-router' {
       path: '/courses/$slug'
       fullPath: '/courses/$slug'
       preLoaderRoute: typeof AppCoursesSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/fees/': {
+      id: '/_app/fees/'
+      path: '/fees'
+      fullPath: '/fees/'
+      preLoaderRoute: typeof AppFeesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/fees/payments': {
+      id: '/_app/fees/payments'
+      path: '/fees/payments'
+      fullPath: '/fees/payments'
+      preLoaderRoute: typeof AppFeesPaymentsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/students/': {
@@ -267,9 +325,11 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppApplicationsIdRoute: typeof AppApplicationsIdRoute
   AppCoursesSlugRoute: typeof AppCoursesSlugRoute
+  AppFeesPaymentsRoute: typeof AppFeesPaymentsRoute
   AppStudentsIdRoute: typeof AppStudentsIdRoute
   AppApplicationsIndexRoute: typeof AppApplicationsIndexRoute
   AppCoursesIndexRoute: typeof AppCoursesIndexRoute
+  AppFeesIndexRoute: typeof AppFeesIndexRoute
   AppStudentsIndexRoute: typeof AppStudentsIndexRoute
 }
 
@@ -277,9 +337,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppApplicationsIdRoute: AppApplicationsIdRoute,
   AppCoursesSlugRoute: AppCoursesSlugRoute,
+  AppFeesPaymentsRoute: AppFeesPaymentsRoute,
   AppStudentsIdRoute: AppStudentsIdRoute,
   AppApplicationsIndexRoute: AppApplicationsIndexRoute,
   AppCoursesIndexRoute: AppCoursesIndexRoute,
+  AppFeesIndexRoute: AppFeesIndexRoute,
   AppStudentsIndexRoute: AppStudentsIndexRoute,
 }
 
@@ -290,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   AuthSigninRoute: AuthSigninRoute,
   AuthSignoutRoute: AuthSignoutRoute,
+  FeesPaymentsDotcsvRoute: FeesPaymentsDotcsvRoute,
   StudentsIdRecordDotpdfRoute: StudentsIdRecordDotpdfRoute,
 }
 export const routeTree = rootRouteImport

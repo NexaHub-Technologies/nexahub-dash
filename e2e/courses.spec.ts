@@ -13,11 +13,11 @@ test.describe.configure({ timeout: 120_000 });
 
 /* A course with known numbers, so the test doesn't depend on whatever else
    is on the branch: 3 applicants (2 waiting, 1 approved), 2 active students
-   and 1 who completed. Owner-only, on the branch the tests use. */
+   and 1 who completed, enrolled straight into the course. Owner-only, on
+   the branch the tests use. */
 const sql = postgres(process.env.DATABASE_OWNER_URL ?? "", { max: 1 });
 const SLUG = "e2e-metrics-course";
 const UNSEEN = "e2e-brand-new-course";
-const COHORT = "e0000000-0000-0000-0000-0000000000c1";
 const STUDENTS = [
 	"e0000000-0000-0000-0000-0000000000a1",
 	"e0000000-0000-0000-0000-0000000000a2",
@@ -35,7 +35,6 @@ const application = (slug: string, name: string, status = "new") => sql`
 async function cleanUp() {
 	await sql`delete from public.applications where course_slug in (${SLUG}, ${UNSEEN})`;
 	await sql`delete from public.students where id = any(${STUDENTS})`;
-	await sql`delete from public.cohorts where id = ${COHORT}`;
 	await sql`delete from public.courses where slug in (${SLUG}, ${UNSEEN})`;
 }
 
@@ -45,14 +44,11 @@ test.beforeAll(async () => {
 	await application(SLUG, "Ada Waiting");
 	await application(SLUG, "Bayo Waiting");
 	await application(SLUG, "Chi Approved", "approved");
-	await sql`insert into public.cohorts
-		(id, course_slug, name, starts_on, ends_on, mode, fee_kobo)
-		values (${COHORT}, ${SLUG}, 'E2E Cohort', current_date - 7, current_date + 60, 'online', 0)`;
 	for (const [i, id] of STUDENTS.entries()) {
 		await sql`insert into public.students (id, full_name, email)
 			values (${id}, ${`E2E Student ${i + 1}`}, ${`e2e.student${i + 1}@tests.invalid`})`;
-		await sql`insert into public.enrolments (student_id, cohort_id, status)
-			values (${id}, ${COHORT}, ${i < 2 ? "active" : "completed"})`;
+		await sql`insert into public.enrolments (student_id, course_slug, status)
+			values (${id}, ${SLUG}, ${i < 2 ? "active" : "completed"})`;
 	}
 });
 
@@ -87,9 +83,11 @@ test("each course shows its applicants and students", async ({ page }) => {
 		.getByRole("listitem")
 		.filter({ hasText: "Chi Approved" });
 	await expect(applicants).toContainText("approved");
-	await expect(
-		page.getByRole("listitem").filter({ hasText: "E2E Cohort" }),
-	).toContainText("2 students");
+	// the course's students, open enrolments first
+	const students = page.getByRole("listitem").filter({ hasText: /E2E Student/ });
+	await expect(students).toHaveCount(3);
+	await expect(students.first()).toContainText("Active");
+	await expect(students.last()).toContainText("Completed");
 });
 
 test("a course the website adds appears with its first application", async ({

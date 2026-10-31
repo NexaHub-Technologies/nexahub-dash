@@ -6,15 +6,14 @@ import { withStaff } from "./db.server";
 
 /* The headline figures shown above every page, and the dashboard's queues
    and lists. Everything runs under the signed-in person's row-level
-   security, so an instructor's figures cover only their own cohorts and the
-   fee and application figures come back empty for them. "Today" is today
-   in Lagos. */
+   security, so the student, fee and application figures come back empty for
+   anyone but an admin. "Today" is today in Lagos. */
 
 export type OverviewStats = {
 	newApplications: number;
 	students: number;
-	activeCohorts: number;
 	courses: number;
+	overdueInvoices: number;
 };
 
 const today = sql<string>`(now() at time zone 'Africa/Lagos')::date`;
@@ -34,14 +33,17 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 			}>`select
 				(select count(*) from public.applications where status = 'new') as "newApplications",
 				(select count(distinct student_id) from public.enrolments where status = 'active') as "students",
-				(select count(*) from public.cohorts where ends_on >= ${today}) as "activeCohorts",
-				(select count(*) from public.courses) as "courses"`.execute(db);
+				(select count(*) from public.courses) as "courses",
+				(select count(*) from public.invoice_balances
+					where status = 'open' and balance_kobo > 0 and due_on < ${today}) as "overdueInvoices"`.execute(
+				db,
+			);
 			const r = rows[0];
 			return {
 				newApplications: Number(r?.newApplications ?? 0),
 				students: Number(r?.students ?? 0),
-				activeCohorts: Number(r?.activeCohorts ?? 0),
 				courses: Number(r?.courses ?? 0),
+				overdueInvoices: Number(r?.overdueInvoices ?? 0),
 			};
 		});
 	},
@@ -51,7 +53,6 @@ export type Dashboard = {
 	attention: {
 		newApplications: number;
 		overdueInvoices: number;
-		sessionsToday: number;
 		failedMessages: number;
 	};
 	fees: {
@@ -65,13 +66,6 @@ export type Dashboard = {
 		course: string;
 		status: string;
 		created_at: string;
-	}[];
-	sessionsToday: {
-		id: string;
-		cohort: string;
-		course: string;
-		starts_at: string;
-		cancelled: boolean;
 	}[];
 	courses: {
 		slug: string;
@@ -89,8 +83,6 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 				(select count(*) from public.applications where status = 'new') as new_applications,
 				(select count(*) from public.invoice_balances
 					where status = 'open' and balance_kobo > 0 and due_on < ${today}) as overdue_invoices,
-				(select count(*) from public.sessions
-					where not cancelled and (starts_at at time zone 'Africa/Lagos')::date = ${today}) as sessions_today,
 				(select count(*) from public.notifications where status = 'failed') as failed_messages,
 				(select coalesce(sum(amount_kobo), 0) from public.payments
 					where date_trunc('month', paid_at at time zone 'Africa/Lagos')
@@ -119,24 +111,6 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 				.limit(5)
 				.execute();
 
-			const sessionsToday = await db
-				.selectFrom("sessions as s")
-				.innerJoin("cohorts as h", "h.id", "s.cohort_id")
-				.innerJoin("courses as c", "c.slug", "h.course_slug")
-				.select([
-					"s.id",
-					"s.starts_at",
-					"s.cancelled",
-					"h.name as cohort",
-					"c.title as course",
-				])
-				.where(
-					sql<boolean>`(s.starts_at at time zone 'Africa/Lagos')::date = ${today}`,
-				)
-				.orderBy("s.starts_at")
-				.limit(6)
-				.execute();
-
 			// the busiest courses: most students now, then most applicants
 			const courses = (await courseMetrics(db)).slice(0, 5);
 
@@ -144,7 +118,6 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 				attention: {
 					newApplications: n("new_applications"),
 					overdueInvoices: n("overdue_invoices"),
-					sessionsToday: n("sessions_today"),
 					failedMessages: n("failed_messages"),
 				},
 				fees: {
@@ -156,10 +129,6 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 					...a,
 					status: String(a.status),
 					created_at: new Date(a.created_at).toISOString(),
-				})),
-				sessionsToday: sessionsToday.map((s) => ({
-					...s,
-					starts_at: new Date(s.starts_at).toISOString(),
 				})),
 				courses: courses.map(({ slug, title, applicants, activeStudents }) => ({
 					slug,

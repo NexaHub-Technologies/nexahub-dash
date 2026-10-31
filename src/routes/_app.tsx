@@ -72,7 +72,7 @@ function AppShell() {
 			defaultOpen={prefs.sidebarOpen}
 			className="lg:h-svh lg:overflow-hidden"
 		>
-			<AppSidebar role={staff.role} />
+			<AppSidebar role={staff.role} stats={stats} />
 			<SidebarInset className="min-w-0 lg:overflow-y-auto lg:overscroll-contain">
 				<header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:gap-3">
 					<SidebarTrigger className="-ml-1" />

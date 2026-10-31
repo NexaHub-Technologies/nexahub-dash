@@ -1,10 +1,10 @@
 import { useLocation } from "@tanstack/react-router";
 import {
+	AlarmClockIcon,
 	BookOpenIcon,
 	ChevronDownIcon,
 	InboxIcon,
 	UsersIcon,
-	UsersRoundIcon,
 } from "lucide-react";
 import { useId, useState } from "react";
 import { formatCount } from "#/lib/format";
@@ -31,7 +31,7 @@ function summary(s: OverviewStats, isAdmin: boolean) {
 	return [
 		isAdmin && `${formatCount(s.newApplications)} new applications`,
 		`${formatCount(s.students)} active students`,
-		`${formatCount(s.activeCohorts)} active cohorts`,
+		isAdmin && `${formatCount(s.overdueInvoices)} overdue invoices`,
 		`${formatCount(s.courses)} courses`,
 	]
 		.filter(Boolean)
@@ -113,12 +113,16 @@ export function Overview({
 					Icon={UsersIcon}
 					tone="success"
 				/>
-				<StatCard
-					label={isAdmin ? "Active cohorts" : "Your active cohorts"}
-					value={formatCount(stats.activeCohorts)}
-					Icon={UsersRoundIcon}
-					tone="info"
-				/>
+				{isAdmin ? (
+					<StatCard
+						label="Overdue invoices"
+						value={formatCount(stats.overdueInvoices)}
+						Icon={AlarmClockIcon}
+						tone={stats.overdueInvoices ? "danger" : "success"}
+						to="/fees"
+						search={{ status: "overdue" }}
+					/>
+				) : null}
 				<StatCard
 					label="Courses"
 					value={formatCount(stats.courses)}

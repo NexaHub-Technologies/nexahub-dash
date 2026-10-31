@@ -7,8 +7,6 @@ import type { ColumnType } from "kysely";
 
 export type ApplicationStatus = "approved" | "declined" | "new";
 
-export type AttendanceStatus = "absent" | "excused" | "late" | "present";
-
 export type Channel = "email" | "sms";
 
 export type EnrolmentStatus = "active" | "awaiting_payment" | "completed" | "paused" | "withdrawn";
@@ -43,8 +41,6 @@ export type StaffRole = "admin" | "instructor";
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-export type TrainingMode = "hybrid" | "in_person" | "online";
-
 export interface Applications {
   can_commit: boolean;
   comments: Generated<string>;
@@ -68,15 +64,6 @@ export interface Applications {
   status: Generated<ApplicationStatus>;
 }
 
-export interface Attendance {
-  enrolment_id: string;
-  marked_at: Generated<Timestamp>;
-  marked_by: string | null;
-  note: string | null;
-  session_id: string;
-  status: AttendanceStatus;
-}
-
 export interface AuditLog {
   action: string;
   actor: Generated<string | null>;
@@ -85,22 +72,6 @@ export interface AuditLog {
   id: Generated<Int8>;
   row_id: string | null;
   table_name: string | null;
-}
-
-export interface Cohorts {
-  course_slug: string;
-  created_at: Generated<Timestamp>;
-  ends_on: Timestamp;
-  fee_kobo: Int8;
-  id: Generated<string>;
-  instructor_id: string | null;
-  location: string | null;
-  meeting_days: Generated<number[]>;
-  meeting_minutes: Generated<number>;
-  meeting_time: string | null;
-  mode: TrainingMode;
-  name: string;
-  starts_on: Timestamp;
 }
 
 export interface CourseModules {
@@ -117,7 +88,6 @@ export interface Courses {
 }
 
 export interface Enrolments {
-  cohort_id: string | null;
   course_slug: string;
   created_at: Generated<Timestamp>;
   id: Generated<string>;
@@ -193,16 +163,6 @@ export interface Payments {
   reference: string;
 }
 
-export interface Sessions {
-  cancelled: Generated<boolean>;
-  cohort_id: string;
-  ends_at: Timestamp;
-  id: Generated<string>;
-  location: string | null;
-  module_n: number | null;
-  starts_at: Timestamp;
-}
-
 export interface Staff {
   active: Generated<boolean>;
   created_at: Generated<Timestamp>;
@@ -227,9 +187,7 @@ export interface Students {
 
 export interface DB {
   applications: Applications;
-  attendance: Attendance;
   audit_log: AuditLog;
-  cohorts: Cohorts;
   course_modules: CourseModules;
   courses: Courses;
   enrolments: Enrolments;
@@ -239,7 +197,6 @@ export interface DB {
   notification_prefs: NotificationPrefs;
   notifications: Notifications;
   payments: Payments;
-  sessions: Sessions;
   staff: Staff;
   students: Students;
 }

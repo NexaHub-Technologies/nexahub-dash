@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { sql } from "kysely";
 import { getStaff } from "./auth";
 import { type Db, withStaff } from "./db.server";
+import type { EnrolmentStatus } from "./status";
 
 /* How each course is doing: who has applied and who is studying. The
    course list is whatever is in public.courses; a course the website adds
@@ -18,7 +19,7 @@ export type CourseMetrics = {
 	approved: number;
 	activeStudents: number;
 	completed: number;
-	activeCohorts: number;
+	awaitingPayment: number;
 };
 
 export type CourseDetail = CourseMetrics & {
@@ -28,12 +29,11 @@ export type CourseDetail = CourseMetrics & {
 		status: string;
 		created_at: string;
 	}[];
-	cohorts: {
+	students: {
 		id: string;
-		name: string;
-		starts_on: string;
-		ends_on: string;
-		activeStudents: number;
+		full_name: string;
+		status: EnrolmentStatus;
+		starts_on: string | null;
 	}[];
 };
 
@@ -42,8 +42,6 @@ async function signedIn() {
 	if (!staff) throw new Error("Not signed in");
 	return staff;
 }
-
-const today = sql<string>`(now() at time zone 'Africa/Lagos')::date`;
 
 export async function courseMetrics(
 	db: Db,
@@ -59,13 +57,11 @@ export async function courseMetrics(
 			(select count(*) from public.applications a
 				where a.course_slug = c.slug and a.status = 'approved') as approved,
 			(select count(distinct e.student_id) from public.enrolments e
-				join public.cohorts h on h.id = e.cohort_id
-				where h.course_slug = c.slug and e.status = 'active') as active_students,
+				where e.course_slug = c.slug and e.status = 'active') as active_students,
 			(select count(distinct e.student_id) from public.enrolments e
-				join public.cohorts h on h.id = e.cohort_id
-				where h.course_slug = c.slug and e.status = 'completed') as completed,
-			(select count(*) from public.cohorts h
-				where h.course_slug = c.slug and h.ends_on >= ${today}) as active_cohorts
+				where e.course_slug = c.slug and e.status = 'completed') as completed,
+			(select count(distinct e.student_id) from public.enrolments e
+				where e.course_slug = c.slug and e.status = 'awaiting_payment') as awaiting_payment
 		from public.courses c
 		where ${slug === undefined ? sql`true` : sql`c.slug = ${slug}`}
 		order by active_students desc, applicants desc, c.title`.execute(db);
@@ -77,7 +73,7 @@ export async function courseMetrics(
 		approved: Number(r.approved),
 		activeStudents: Number(r.active_students),
 		completed: Number(r.completed),
-		activeCohorts: Number(r.active_cohorts),
+		awaitingPayment: Number(r.awaiting_payment),
 	}));
 }
 
@@ -104,13 +100,15 @@ export const getCourseMetrics = createServerFn({ method: "GET" })
 				.limit(5)
 				.execute();
 
-			const { rows: cohorts } = await sql<Record<string, string>>`
-				select h.id, h.name, h.starts_on::text, h.ends_on::text,
-					(select count(distinct e.student_id) from public.enrolments e
-						where e.cohort_id = h.id and e.status = 'active') as active_students
-				from public.cohorts h
-				where h.course_slug = ${slug} and h.ends_on >= ${today}
-				order by h.starts_on`.execute(db);
+			// the latest on the course, open enrolments first
+			const { rows: students } = await sql<Record<string, string | null>>`
+				select s.id, s.full_name, e.status::text, e.starts_on::text
+				from public.enrolments e
+				join public.students s on s.id = e.student_id
+				where e.course_slug = ${slug}
+				order by (e.status in ('awaiting_payment', 'active', 'paused')) desc,
+					e.created_at desc
+				limit 8`.execute(db);
 
 			return {
 				...course,
@@ -120,12 +118,11 @@ export const getCourseMetrics = createServerFn({ method: "GET" })
 					status: String(a.status),
 					created_at: new Date(a.created_at).toISOString(),
 				})),
-				cohorts: cohorts.map((h) => ({
-					id: String(h.id),
-					name: String(h.name),
-					starts_on: String(h.starts_on),
-					ends_on: String(h.ends_on),
-					activeStudents: Number(h.active_students),
+				students: students.map((r) => ({
+					id: String(r.id),
+					full_name: String(r.full_name),
+					status: r.status as EnrolmentStatus,
+					starts_on: r.starts_on,
 				})),
 			};
 		});

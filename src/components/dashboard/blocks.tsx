@@ -51,6 +51,7 @@ export function StatCard({
 	Icon,
 	tone,
 	to,
+	search,
 	footer,
 }: {
 	label: string;
@@ -58,6 +59,7 @@ export function StatCard({
 	Icon: LucideIcon;
 	tone: Tone;
 	to?: string;
+	search?: Record<string, string>;
 	footer?: ReactNode;
 }) {
 	const body = (
@@ -93,6 +95,7 @@ export function StatCard({
 			{to ? (
 				<Link
 					to={to}
+					search={search}
 					className={cn(
 						cls,
 						"rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
@@ -112,6 +115,7 @@ export function Panel({
 	title,
 	description,
 	to,
+	search,
 	linkLabel = "See all",
 	action,
 	className,
@@ -120,6 +124,7 @@ export function Panel({
 	title: string;
 	description?: string;
 	to?: string;
+	search?: Record<string, string>;
 	linkLabel?: string;
 	action?: ReactNode;
 	className?: string;
@@ -138,6 +143,7 @@ export function Panel({
 				{to ? (
 					<Link
 						to={to}
+						search={search}
 						className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 					>
 						{linkLabel} <ChevronRightIcon aria-hidden className="size-4" />

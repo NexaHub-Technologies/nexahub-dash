@@ -14,21 +14,38 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "#/components/ui/sidebar";
-import { getStaff } from "../lib/auth";
+import { getStaff, type Staff } from "../lib/auth";
 import { getOverviewStats } from "../lib/overview";
 import { getShellPrefs } from "../lib/shell";
 
 /* Every signed-in screen sits under this layout, which follows the
    DistressNow admin console: an inset sidebar, a sticky header naming the
-   section, the overview figures, then the page. The staff check runs on each
-   navigation, so someone deactivated mid-session is sent to the login page
-   the next time they move. */
+   section, the overview figures, then the page.
+
+   The staff check is a server round trip, so in the browser it is reused
+   for a minute rather than repeated on every move. That loses nothing:
+   every server function checks the session and the staff row again, and the
+   database's policies refuse a deactivated account, so someone deactivated
+   mid-session sees nothing either way and is sent to the login page within
+   the minute. The overview figures are kept for 30 seconds the same way;
+   any change made in the console reloads them at once. */
+const STAFF_TTL = 60_000;
+let checked: { staff: Staff; at: number } | undefined;
+
 export const Route = createFileRoute("/_app")({
 	beforeLoad: async () => {
+		if (typeof window !== "undefined" && checked) {
+			if (Date.now() - checked.at < STAFF_TTL) return { staff: checked.staff };
+		}
 		const staff = await getStaff();
-		if (!staff) throw redirect({ to: "/login" });
+		if (!staff) {
+			checked = undefined;
+			throw redirect({ to: "/login" });
+		}
+		if (typeof window !== "undefined") checked = { staff, at: Date.now() };
 		return { staff };
 	},
+	staleTime: 30_000,
 	loader: async () => {
 		const [stats, prefs] = await Promise.all([
 			getOverviewStats(),

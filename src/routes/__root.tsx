@@ -17,7 +17,7 @@ export const Route = createRootRoute({
 			{ title: "NexaHubTech Dash" },
 			/* a staff tool: nothing here should be indexed */
 			{ name: "robots", content: "noindex, nofollow" },
-			{ name: "theme-color", content: "#f6eff4" },
+			{ name: "theme-color", content: "#1a0828" },
 		],
 		links: [
 			{ rel: "icon", type: "image/svg+xml", href: "/logo-main.svg" },

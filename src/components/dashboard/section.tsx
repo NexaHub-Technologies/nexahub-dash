@@ -18,7 +18,7 @@ export function Section({
 		<Card className="gap-4 p-4 sm:p-6">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="flex flex-col gap-1">
-					<h1 className="text-2xl font-bold">{title}</h1>
+					<h1 className="text-3xl font-extrabold">{title}</h1>
 					{description ? (
 						<p className="text-sm text-muted-foreground">{description}</p>
 					) : null}

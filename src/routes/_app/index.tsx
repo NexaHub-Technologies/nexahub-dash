@@ -144,25 +144,21 @@ function Dashboard() {
 				) : null}
 
 				{isAdmin ? (
-					<Card className="relative flex flex-col justify-between gap-5 overflow-hidden bg-ink p-5 text-white sm:p-6">
-						<div
-							aria-hidden
-							className="pointer-events-none absolute -right-16 -bottom-16 size-56 rounded-full bg-[radial-gradient(circle,rgb(255_255_255/0.14),transparent_70%)]"
-						/>
+					<Card className="stage flex flex-col justify-between gap-5 p-5 sm:p-6">
 						<Link
 							to="/fees/payments"
-							className="relative flex items-center gap-2 text-sm text-white/70 hover:text-white hover:underline"
+							className="flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:underline"
 						>
 							<WalletIcon aria-hidden className="size-4" /> Fees collected this
 							month
 						</Link>
-						<p className="relative font-heading text-3xl font-bold tracking-tight tabular-nums">
+						<p className="stat-value w-fit font-heading text-4xl font-extrabold tracking-tight tabular-nums">
 							{formatNaira(d.fees.collectedThisMonthKobo)}
 						</p>
-						<Separator className="bg-white/15" />
-						<div className="relative flex flex-col gap-2 text-sm">
+						<Separator />
+						<div className="flex flex-col gap-2 text-sm">
 							<p className="flex items-center justify-between">
-								<span className="flex items-center gap-2 text-white/70">
+								<span className="flex items-center gap-2 text-muted-foreground">
 									<CreditCardIcon aria-hidden className="size-4" /> Payments
 								</span>
 								<span className="font-semibold tabular-nums">
@@ -170,7 +166,7 @@ function Dashboard() {
 								</span>
 							</p>
 							<p className="flex items-center justify-between">
-								<span className="flex items-center gap-2 text-white/70">
+								<span className="flex items-center gap-2 text-muted-foreground">
 									<ReceiptIcon aria-hidden className="size-4" /> Outstanding
 								</span>
 								<span className="font-semibold tabular-nums">

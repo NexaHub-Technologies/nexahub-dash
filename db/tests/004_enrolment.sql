@@ -7,7 +7,7 @@ create extension pgtap with schema tap;
 grant usage on schema tap to anon, authenticated, worker;
 set local search_path = public, tap;
 grant anon, authenticated, worker to current_user with inherit false, set true;
-select plan(24);
+select plan(22);
 
 insert into neon_auth."user" (id, name, email, "emailVerified") values
   ('f0000000-0000-0000-0000-000000000001', 'Head', 'head@tests.invalid', true),
@@ -123,22 +123,6 @@ select is(
    where to_status = 'paused'),
   'Head', 'and who changed it');
 
--- ── cohorts are optional, but must match ───────────────────────────────
-
-reset role;
-insert into public.cohorts (id, course_slug, name, starts_on, ends_on, mode, fee_kobo)
-values ('f0000000-0000-0000-0000-0000000000c1', 'free-course', 'Free Nov', '2026-11-02', '2026-11-30', 'online', 0);
-insert into public.students (id, full_name, email) values
-  ('f0000000-0000-0000-0000-0000000000d1', 'Dayo Cohort', 'dayo@tests.invalid');
-
-select lives_ok($$
-  insert into public.enrolments (student_id, cohort_id)
-  values ('f0000000-0000-0000-0000-0000000000d1', 'f0000000-0000-0000-0000-0000000000c1')
-$$, 'an enrolment in a cohort takes the cohort''s course');
-select throws_ok($$
-  insert into public.enrolments (student_id, cohort_id, course_slug, status)
-  values ('f0000000-0000-0000-0000-0000000000d1', 'f0000000-0000-0000-0000-0000000000c1', 'paid-course', 'completed')
-$$, '23514', null, 'and cannot name a different one');
 set local role authenticated;
 
 -- ── as an instructor ───────────────────────────────────────────────────

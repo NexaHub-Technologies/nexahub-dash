@@ -3,17 +3,20 @@ import {
 	Link,
 	notFound,
 	redirect,
-	useRouter,
 } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
 	ChevronDownIcon,
 	DownloadIcon,
 	PencilIcon,
-	WalletIcon,
 } from "lucide-react";
 import { useState } from "react";
+import {
+	AddInvoiceButton,
+	InvoiceActions,
+} from "#/components/dashboard/fee-dialogs";
 import { StatusBadge } from "#/components/dashboard/status-badge";
+import { useApply } from "#/components/dashboard/use-apply";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -48,12 +51,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "#/components/ui/dialog";
-import {
-	Field,
-	FieldDescription,
-	FieldGroup,
-	FieldLabel,
-} from "#/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import {
 	Select,
@@ -73,9 +71,7 @@ import {
 	TableRow,
 } from "#/components/ui/table";
 import { Textarea } from "#/components/ui/textarea";
-import { toast } from "#/components/ui/toast";
-import { formatDate, formatNaira, parseNaira } from "#/lib/format";
-import type { Outcome } from "#/lib/outcome";
+import { formatDate, formatNaira } from "#/lib/format";
 import {
 	type EnrolmentStatus,
 	isStatus,
@@ -84,7 +80,6 @@ import {
 } from "#/lib/status";
 import {
 	getStudent,
-	recordPayment,
 	type StudentDetail,
 	setEnrolmentStatus,
 	updateStudent,
@@ -105,30 +100,6 @@ export const Route = createFileRoute("/_app/students/$id")({
 
 const yesNo = (v: string | boolean | undefined) =>
 	typeof v === "boolean" ? (v ? "Yes" : "No") : (v ?? "");
-
-const todayInLagos = () =>
-	new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(
-		new Date(),
-	);
-
-/* shows the outcome of a change and, when something changed, reloads */
-function useApply() {
-	const router = useRouter();
-	return async (outcome: Promise<Outcome>, success: string) => {
-		const r = await outcome;
-		if (r.ok) {
-			toast.add({ title: success, description: r.note, type: "success" });
-			await router.invalidate();
-		} else {
-			toast.add({
-				title: "Not changed",
-				description: r.message,
-				type: "error",
-			});
-		}
-		return r.ok;
-	};
-}
 
 function StudentPage() {
 	const s = Route.useLoaderData();
@@ -206,6 +177,14 @@ function StudentPage() {
 									? `${formatNaira(owed)} outstanding`
 									: "Nothing outstanding"}
 							</CardDescription>
+							<CardAction>
+								<AddInvoiceButton
+									enrolments={s.enrolments.map((e) => ({
+										id: e.id,
+										course: e.course,
+									}))}
+								/>
+							</CardAction>
 						</CardHeader>
 						<CardContent className="flex flex-col gap-4">
 							{s.invoices.length ? (
@@ -228,7 +207,8 @@ function StudentPage() {
 													<span className="flex flex-col">
 														<span className="font-medium">{i.description}</span>
 														<span className="text-xs text-muted-foreground">
-															Due {formatDate(i.due_on)} · {i.status}
+															Due {formatDate(i.due_on)} ·{" "}
+															{i.status === "void" ? "voided" : i.status}
 														</span>
 													</span>
 												</TableCell>
@@ -242,9 +222,15 @@ function StudentPage() {
 													{formatNaira(Math.max(i.balance_kobo, 0))}
 												</TableCell>
 												<TableCell className="text-right">
-													{i.status === "open" ? (
-														<PaymentDialog student={s} invoice={i} />
-													) : null}
+													<InvoiceActions
+														invoice={i}
+														studentName={s.full_name}
+														phone={s.phone}
+														course={
+															s.enrolments.find((e) => e.id === i.enrolment_id)
+																?.course ?? ""
+														}
+													/>
 												</TableCell>
 											</TableRow>
 										))}
@@ -483,139 +469,6 @@ function EnrolmentRow({
 				</AlertDialogContent>
 			</AlertDialog>
 		</div>
-	);
-}
-
-function PaymentDialog({
-	student,
-	invoice,
-}: {
-	student: StudentDetail;
-	invoice: StudentDetail["invoices"][number];
-}) {
-	const apply = useApply();
-	const [open, setOpen] = useState(false);
-	const [pending, setPending] = useState(false);
-	const [method, setMethod] = useState<"transfer" | "cash">("transfer");
-	const [amountError, setAmountError] = useState<string | null>(null);
-	const balance = Math.max(invoice.balance_kobo, 0);
-
-	async function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
-		ev.preventDefault();
-		const form = new FormData(ev.currentTarget);
-		const amountKobo = parseNaira(String(form.get("amount") ?? ""));
-		if (!amountKobo) {
-			setAmountError("Enter the amount paid in naira, e.g. 50,000.");
-			return;
-		}
-		setAmountError(null);
-		setPending(true);
-		const ok = await apply(
-			recordPayment({
-				data: {
-					invoiceId: invoice.id,
-					amountKobo,
-					method,
-					reference: String(form.get("reference") ?? ""),
-					paidOn: String(form.get("paidOn") ?? ""),
-				},
-			}),
-			`${formatNaira(amountKobo)} recorded for ${student.full_name}`,
-		);
-		setPending(false);
-		if (ok) setOpen(false);
-	}
-
-	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger
-				render={
-					<Button variant="outline" size="sm">
-						<WalletIcon data-icon="inline-start" />
-						Record payment
-					</Button>
-				}
-			/>
-			<DialogContent>
-				<form onSubmit={onSubmit} className="flex flex-col gap-6">
-					<DialogHeader>
-						<DialogTitle>Record a payment</DialogTitle>
-						<DialogDescription>
-							{invoice.description} · {formatNaira(balance)} outstanding
-						</DialogDescription>
-					</DialogHeader>
-					<FieldGroup>
-						<Field data-invalid={amountError ? true : undefined}>
-							<FieldLabel htmlFor="pay-amount">Amount (₦)</FieldLabel>
-							<Input
-								id="pay-amount"
-								name="amount"
-								inputMode="decimal"
-								required
-								defaultValue={formatNaira(balance).replace(/[^\d,]/g, "")}
-								aria-invalid={amountError ? true : undefined}
-							/>
-							{amountError ? (
-								<FieldDescription>{amountError}</FieldDescription>
-							) : null}
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="pay-method">Method</FieldLabel>
-							<Select
-								items={[
-									{ label: "Bank transfer", value: "transfer" },
-									{ label: "Cash", value: "cash" },
-								]}
-								value={method}
-								onValueChange={(v) =>
-									setMethod(v === "cash" ? "cash" : "transfer")
-								}
-							>
-								<SelectTrigger id="pay-method">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										<SelectItem value="transfer">Bank transfer</SelectItem>
-										<SelectItem value="cash">Cash</SelectItem>
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="pay-reference">Reference</FieldLabel>
-							<Input
-								id="pay-reference"
-								name="reference"
-								required
-								maxLength={120}
-							/>
-							<FieldDescription>
-								The transfer reference or receipt number. Each one can be
-								recorded once.
-							</FieldDescription>
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="pay-date">Paid on</FieldLabel>
-							<Input
-								id="pay-date"
-								name="paidOn"
-								type="date"
-								defaultValue={todayInLagos()}
-								required
-							/>
-						</Field>
-					</FieldGroup>
-					<DialogFooter>
-						<DialogClose render={<Button variant="ghost">Cancel</Button>} />
-						<Button type="submit" disabled={pending}>
-							{pending && <Spinner data-icon="inline-start" />}
-							Record payment
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
 	);
 }
 

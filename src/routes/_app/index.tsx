@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	BookOpenIcon,
-	CalendarClockIcon,
 	CheckCircle2Icon,
 	CreditCardIcon,
 	InboxIcon,
@@ -21,7 +20,7 @@ import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Card } from "#/components/ui/card";
 import { Separator } from "#/components/ui/separator";
-import { formatClock, formatCount, formatNaira, timeAgo } from "#/lib/format";
+import { formatCount, formatNaira, timeAgo } from "#/lib/format";
 import { getDashboard } from "#/lib/overview";
 import { cn } from "#/lib/utils";
 
@@ -57,6 +56,7 @@ function Dashboard() {
 		tone: Tone;
 		adminOnly: boolean;
 		to?: string;
+		search?: Record<string, string>;
 	}[] = [
 		{
 			label: "Applications to review",
@@ -72,13 +72,8 @@ function Dashboard() {
 			Icon: ReceiptIcon,
 			tone: "danger",
 			adminOnly: true,
-		},
-		{
-			label: "Classes today",
-			count: d.attention.sessionsToday,
-			Icon: CalendarClockIcon,
-			tone: "info",
-			adminOnly: false,
+			to: "/fees",
+			search: { status: "overdue" },
 		},
 		{
 			label: "Messages not sent",
@@ -100,51 +95,53 @@ function Dashboard() {
 					isAdmin && "xl:grid-cols-[minmax(0,1fr)_20rem]",
 				)}
 			>
-				<Panel
-					title="Needs attention"
-					description="Queues waiting on the team right now."
-				>
-					<ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-						{queue
-							.filter((q) => isAdmin || !q.adminOnly)
-							.map(({ label, count, Icon, tone, to }) => {
-								const clear = count === 0;
-								const cls = cn(
-									"flex h-full flex-col gap-3 rounded-lg border p-4",
-									clear && "border-line-soft",
-									to && "transition-colors hover:bg-muted",
-								);
-								const body = (
-									<>
-										<IconChip
-											Icon={clear ? CheckCircle2Icon : Icon}
-											tone={clear ? "success" : tone}
-											className="size-9"
-										/>
-										<span className="flex flex-col">
-											<span className="font-heading text-2xl font-semibold tabular-nums">
-												{formatCount(count)}
+				{isAdmin ? (
+					<Panel
+						title="Needs attention"
+						description="Queues waiting on the team right now."
+					>
+						<ul className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+							{queue
+								.filter((q) => isAdmin || !q.adminOnly)
+								.map(({ label, count, Icon, tone, to, search }) => {
+									const clear = count === 0;
+									const cls = cn(
+										"flex h-full flex-col gap-3 rounded-lg border p-4",
+										clear && "border-line-soft",
+										to && "transition-colors hover:bg-muted",
+									);
+									const body = (
+										<>
+											<IconChip
+												Icon={clear ? CheckCircle2Icon : Icon}
+												tone={clear ? "success" : tone}
+												className="size-9"
+											/>
+											<span className="flex flex-col">
+												<span className="font-heading text-2xl font-semibold tabular-nums">
+													{formatCount(count)}
+												</span>
+												<span className="text-xs text-muted-foreground">
+													{clear ? `${label} · all clear` : label}
+												</span>
 											</span>
-											<span className="text-xs text-muted-foreground">
-												{clear ? `${label} · all clear` : label}
-											</span>
-										</span>
-									</>
-								);
-								return (
-									<li key={label}>
-										{to ? (
-											<Link to={to} className={cls}>
-												{body}
-											</Link>
-										) : (
-											<div className={cls}>{body}</div>
-										)}
-									</li>
-								);
-							})}
-					</ul>
-				</Panel>
+										</>
+									);
+									return (
+										<li key={label}>
+											{to ? (
+												<Link to={to} search={search} className={cls}>
+													{body}
+												</Link>
+											) : (
+												<div className={cls}>{body}</div>
+											)}
+										</li>
+									);
+								})}
+						</ul>
+					</Panel>
+				) : null}
 
 				{isAdmin ? (
 					<Card className="relative flex flex-col justify-between gap-5 overflow-hidden bg-ink p-5 text-white sm:p-6">
@@ -152,10 +149,13 @@ function Dashboard() {
 							aria-hidden
 							className="pointer-events-none absolute -right-16 -bottom-16 size-56 rounded-full bg-[radial-gradient(circle,rgb(255_255_255/0.14),transparent_70%)]"
 						/>
-						<div className="relative flex items-center gap-2 text-sm text-white/70">
+						<Link
+							to="/fees/payments"
+							className="relative flex items-center gap-2 text-sm text-white/70 hover:text-white hover:underline"
+						>
 							<WalletIcon aria-hidden className="size-4" /> Fees collected this
 							month
-						</div>
+						</Link>
 						<p className="relative font-heading text-3xl font-bold tracking-tight tabular-nums">
 							{formatNaira(d.fees.collectedThisMonthKobo)}
 						</p>
@@ -182,7 +182,7 @@ function Dashboard() {
 				) : null}
 			</div>
 
-			<div className="grid items-start gap-6 xl:grid-cols-3">
+			<div className="grid items-start gap-6 xl:grid-cols-2">
 				{isAdmin ? (
 					<Panel title="Recent applications" to="/applications">
 						{d.recentApplications.length ? (
@@ -220,40 +220,6 @@ function Dashboard() {
 						)}
 					</Panel>
 				) : null}
-
-				<Panel title="Today's classes">
-					{d.sessionsToday.length ? (
-						<ul className="flex flex-col">
-							{d.sessionsToday.map((s) => (
-								<ListRow
-									key={s.id}
-									leading={
-										<IconChip
-											Icon={CalendarClockIcon}
-											tone={s.cancelled ? "neutral" : "info"}
-											className="size-9"
-										/>
-									}
-									title={s.cohort}
-									subtitle={s.course}
-									trailing={
-										s.cancelled ? (
-											<Badge variant="outline">Cancelled</Badge>
-										) : (
-											<span className="tabular-nums">
-												{formatClock(s.starts_at)}
-											</span>
-										)
-									}
-								/>
-							))}
-						</ul>
-					) : (
-						<PanelEmpty Icon={CalendarClockIcon}>
-							No classes scheduled for today.
-						</PanelEmpty>
-					)}
-				</Panel>
 
 				<Panel title="Courses" to="/courses">
 					{d.courses.length ? (

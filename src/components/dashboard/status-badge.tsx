@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { type EnrolmentStatus, STATUS_LABEL, STATUS_TONE } from "#/lib/status";
 import { cn } from "#/lib/utils";
 
@@ -9,8 +10,32 @@ const TONE = {
 	danger: "bg-danger-soft text-danger",
 } as const;
 
-/* A student's status on a course, as a tinted pill with a dot, after the
-   status pills in the DistressNow console. */
+/* A tinted pill with a dot, after the status pills in the DistressNow
+   console. */
+export function TonePill({
+	tone,
+	className,
+	children,
+}: {
+	tone: keyof typeof TONE;
+	className?: string;
+	children: ReactNode;
+}) {
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+				TONE[tone],
+				className,
+			)}
+		>
+			<span aria-hidden className="size-1.5 rounded-full bg-current" />
+			{children}
+		</span>
+	);
+}
+
+/* A student's status on a course. */
 export function StatusBadge({
 	status,
 	className,
@@ -19,15 +44,8 @@ export function StatusBadge({
 	className?: string;
 }) {
 	return (
-		<span
-			className={cn(
-				"inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
-				TONE[STATUS_TONE[status]],
-				className,
-			)}
-		>
-			<span aria-hidden className="size-1.5 rounded-full bg-current" />
+		<TonePill tone={STATUS_TONE[status]} className={className}>
 			{STATUS_LABEL[status]}
-		</span>
+		</TonePill>
 	);
 }

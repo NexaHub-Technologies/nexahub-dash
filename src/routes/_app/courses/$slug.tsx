@@ -1,24 +1,23 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
-	CalendarRangeIcon,
 	CheckCircle2Icon,
 	GraduationCapIcon,
 	InboxIcon,
-	UsersRoundIcon,
+	WalletIcon,
 } from "lucide-react";
 import {
-	IconChip,
 	ListRow,
 	Panel,
 	PanelEmpty,
 	StatCard,
 } from "#/components/dashboard/blocks";
+import { StatusBadge } from "#/components/dashboard/status-badge";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { getCourseMetrics } from "#/lib/catalogue";
-import { formatCount, timeAgo } from "#/lib/format";
+import { formatCount, formatDate, timeAgo } from "#/lib/format";
 
 export const Route = createFileRoute("/_app/courses/$slug")({
 	loader: async ({ params }) => {
@@ -41,13 +40,6 @@ const STATUS: Record<string, "secondary" | "outline" | "destructive"> = {
 	approved: "outline",
 	declined: "destructive",
 };
-
-const day = new Intl.DateTimeFormat("en-NG", {
-	day: "numeric",
-	month: "short",
-	timeZone: "Africa/Lagos",
-});
-const dateOnly = (d: string) => day.format(new Date(`${d}T12:00:00Z`));
 
 function Course() {
 	const c = Route.useLoaderData();
@@ -92,10 +84,10 @@ function Course() {
 					tone="neutral"
 				/>
 				<StatCard
-					label="Active cohorts"
-					value={formatCount(c.activeCohorts)}
-					Icon={UsersRoundIcon}
-					tone="info"
+					label="Awaiting payment"
+					value={formatCount(c.awaitingPayment)}
+					Icon={WalletIcon}
+					tone="warning"
 				/>
 			</div>
 
@@ -133,32 +125,36 @@ function Course() {
 					</Panel>
 				) : null}
 
-				<Panel title="Current cohorts">
-					{c.cohorts.length ? (
+				<Panel
+					title="Students on this course"
+					to={isAdmin ? "/students" : undefined}
+					search={{ course: c.slug }}
+				>
+					{c.students.length ? (
 						<ul className="flex flex-col">
-							{c.cohorts.map((h) => (
+							{c.students.map((st) => (
 								<ListRow
-									key={h.id}
+									key={st.id}
 									leading={
-										<IconChip
-											Icon={CalendarRangeIcon}
-											tone="info"
-											className="size-9"
-										/>
+										<Avatar className="size-9">
+											<AvatarFallback>{initials(st.full_name)}</AvatarFallback>
+										</Avatar>
 									}
-									title={h.name}
-									subtitle={`${dateOnly(h.starts_on)} – ${dateOnly(h.ends_on)}`}
-									trailing={
-										<span className="tabular-nums">
-											{formatCount(h.activeStudents)} students
-										</span>
+									title={st.full_name}
+									subtitle={
+										st.starts_on
+											? `Started ${formatDate(st.starts_on)}`
+											: undefined
 									}
+									trailing={<StatusBadge status={st.status} />}
+									to={isAdmin ? `/students/${st.id}` : undefined}
 								/>
 							))}
 						</ul>
 					) : (
-						<PanelEmpty Icon={CalendarRangeIcon}>
-							No cohorts running for this course.
+						<PanelEmpty Icon={GraduationCapIcon}>
+							Nobody is enrolled yet. Approving an application enrols the
+							student here.
 						</PanelEmpty>
 					)}
 				</Panel>

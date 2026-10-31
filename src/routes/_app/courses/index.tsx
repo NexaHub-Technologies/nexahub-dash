@@ -3,7 +3,7 @@ import {
 	BookOpenIcon,
 	GraduationCapIcon,
 	InboxIcon,
-	UsersRoundIcon,
+	WalletIcon,
 } from "lucide-react";
 import { StatCard } from "#/components/dashboard/blocks";
 import { Section } from "#/components/dashboard/section";
@@ -35,8 +35,7 @@ const sum = (rows: { [k: string]: unknown }[], key: string) =>
 	rows.reduce((n, r) => n + Number(r[key] ?? 0), 0);
 
 /* How each course is doing: who has applied and who is studying now.
-   Applicants are admin business, so instructors see only the students and
-   cohorts they teach. */
+   Applicants and students are admin business. */
 function Courses() {
 	const courses = Route.useLoaderData();
 	const { staff } = Route.useRouteContext();
@@ -68,10 +67,10 @@ function Courses() {
 					tone="success"
 				/>
 				<StatCard
-					label="Active cohorts"
-					value={formatCount(sum(courses, "activeCohorts"))}
-					Icon={UsersRoundIcon}
-					tone="info"
+					label="Awaiting payment"
+					value={formatCount(sum(courses, "awaitingPayment"))}
+					Icon={WalletIcon}
+					tone="warning"
 				/>
 			</div>
 
@@ -92,7 +91,7 @@ function Courses() {
 									Completed
 								</TableHead>
 								<TableHead className="hidden text-right sm:table-cell">
-									Active cohorts
+									Awaiting payment
 								</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -127,7 +126,7 @@ function Courses() {
 										{formatCount(c.completed)}
 									</TableCell>
 									<TableCell className="hidden text-right tabular-nums sm:table-cell">
-										{formatCount(c.activeCohorts)}
+										{formatCount(c.awaitingPayment)}
 									</TableCell>
 								</TableRow>
 							))}

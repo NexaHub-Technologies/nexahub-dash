@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import postgres from "postgres";
 import { expect, test } from "./fixtures";
 import {
@@ -173,11 +174,13 @@ test("a student's status and details can be changed, and their record downloaded
 		timeout: 20_000,
 	});
 
-	const response = await page.request.get(`/students/${student?.id}/record.pdf`);
-	expect(response.status()).toBe(200);
-	expect(response.headers()["content-type"]).toBe("application/pdf");
-	expect(response.headers()["content-disposition"]).toContain("registry-record.pdf");
-	const body = await response.body();
+	// downloaded the way an admin does, from the button, and saved as a PDF
+	const [download] = await Promise.all([
+		page.waitForEvent("download"),
+		page.getByRole("button", { name: "Download PDF record" }).click(),
+	]);
+	expect(download.suggestedFilename()).toMatch(/-registry-record\.pdf$/);
+	const body = await readFile(await download.path());
 	expect(body.subarray(0, 5).toString()).toBe("%PDF-");
 	expect(body.length).toBeGreaterThan(2_000);
 });

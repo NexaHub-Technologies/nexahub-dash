@@ -34,8 +34,9 @@ export function withStaff<T>(staffId: string, work: (db: Db) => Promise<T>) {
 	return connect()
 		.transaction()
 		.execute(async (tx) => {
-			await sql`set local role authenticated`.execute(tx);
-			await sql`select set_config('request.jwt.claims', ${JSON.stringify({ sub: staffId })}, true)`.execute(
+			// one statement, so becoming the caller costs a single round trip;
+			// set_config('role', ..., true) is set local role
+			await sql`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify({ sub: staffId })}, true)`.execute(
 				tx,
 			);
 			return work(tx);

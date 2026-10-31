@@ -215,6 +215,7 @@ function ApplicationPage() {
 
 function ApproveDialog({ application: a }: { application: ApplicationDetail }) {
 	const navigate = useNavigate();
+	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [pending, setPending] = useState(false);
 	const [feeError, setFeeError] = useState<string | null>(null);
@@ -259,6 +260,8 @@ function ApproveDialog({ application: a }: { application: ApplicationDetail }) {
 			type: "success",
 		});
 		await navigate({ to: "/students/$id", params: { id: r.data.studentId } });
+		// the overview's "to review" figure has changed
+		await router.invalidate({ filter: (m) => m.routeId === "/_app" });
 	}
 
 	return (

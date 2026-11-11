@@ -3,6 +3,7 @@ import {
 	Link,
 	notFound,
 	redirect,
+	useNavigate,
 } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
@@ -11,6 +12,7 @@ import {
 	DownloadIcon,
 	KeyRoundIcon,
 	PencilIcon,
+	Trash2Icon,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -95,6 +97,7 @@ import {
 	STATUSES,
 } from "#/lib/status";
 import {
+	deleteStudent,
 	getStudent,
 	type StudentDetail,
 	setEnrolmentStatus,
@@ -168,6 +171,7 @@ function StudentPage() {
 						<DownloadIcon data-icon="inline-start" />
 						Download PDF
 					</Button>
+					<DeleteStudentButton student={s} />
 				</div>
 			</div>
 
@@ -845,5 +849,59 @@ function LoginCard({
 				</AlertDialogContent>
 			</AlertDialog>
 		</Card>
+	);
+}
+
+/* Deletes the student outright, after saying exactly what goes with them.
+   Meant for a mistake; a student who has paid is refused by the database
+   and should be withdrawn instead. */
+function DeleteStudentButton({ student: s }: { student: StudentDetail }) {
+	const apply = useApply();
+	const navigate = useNavigate();
+	const [open, setOpen] = useState(false);
+	const [pending, setPending] = useState(false);
+
+	async function remove() {
+		setPending(true);
+		const ok = await apply(
+			deleteStudent({ data: s.id }),
+			`${s.full_name} deleted`,
+		);
+		setPending(false);
+		setOpen(false);
+		if (ok) await navigate({ to: "/students" });
+	}
+
+	return (
+		<>
+			<Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+				<Trash2Icon data-icon="inline-start" />
+				Delete
+			</Button>
+			<AlertDialog open={open} onOpenChange={setOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete {s.full_name}?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Their enrolments, unpaid invoices, assessments, uploaded files and
+							portal login are deleted with them. This can't be undone. Their
+							application is kept. A student who has paid can't be deleted: set
+							their status to Withdrawn instead.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Keep student</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							disabled={pending}
+							onClick={remove}
+						>
+							{pending && <Spinner data-icon="inline-start" />}
+							Delete student
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }

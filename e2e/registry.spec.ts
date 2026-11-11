@@ -185,6 +185,58 @@ test("a student's status and details can be changed, and their record downloaded
 	expect(body.length).toBeGreaterThan(2_000);
 });
 
+test("a student is deleted, unless they have paid", async ({ page }, info) => {
+	const { approve } = people(info.project.name);
+	// approved straight in the database, then part-paid, to start from a
+	// student with an invoice and a payment
+	const [admin] = await sql<{ id: string }[]>`
+		select id from public.staff where email = ${ADMIN}`;
+	const [app] = await sql<{ id: string }[]>`
+		select id from public.applications where email = ${approve.email}`;
+	const reference = `DEL-${info.project.name}-${Date.now()}`;
+	await sql.begin(async (tx) => {
+		await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: admin?.id })}, true)`;
+		await tx`select public.approve_application(${app?.id}::uuid)`;
+		await tx`insert into public.payments (invoice_id, amount_kobo, method, reference, recorded_by)
+			select i.id, 100000, 'cash', ${reference}, ${admin?.id ?? ""}
+			from public.invoices i join public.enrolments e on e.id = i.enrolment_id
+			join public.students s on s.id = e.student_id where s.email = ${approve.email}`;
+	});
+	const [student] = await sql<{ id: string }[]>`
+		select id from public.students where email = ${approve.email}`;
+
+	await signInAs(page, ADMIN, ADMIN_PASSWORD);
+	await page.goto(`/students/${student?.id}`);
+	await hydrated(page);
+	await expect(page.getByRole("heading", { level: 1 })).toHaveText(approve.name, {
+		timeout: 20_000,
+	});
+
+	// money received stays on the books: the database refuses, and says why
+	await page.getByRole("button", { name: "Delete", exact: true }).click();
+	const confirm = page.getByRole("alertdialog", { name: `Delete ${approve.name}?` });
+	await confirm.getByRole("button", { name: "Delete student" }).click();
+	await expect(
+		page.getByText(`${approve.name} has payments on record and can't be deleted`),
+	).toBeVisible({ timeout: 20_000 });
+	await expect(page.getByRole("heading", { level: 1 })).toHaveText(approve.name);
+
+	// with no payment on record, the student and their unpaid invoice go
+	await sql`delete from public.payments where reference = ${reference}`;
+	await page.getByRole("button", { name: "Delete", exact: true }).click();
+	await confirm.getByRole("button", { name: "Delete student" }).click();
+	await expect(page).toHaveURL(/\/students$/, { timeout: 20_000 });
+	await expect(page.getByText(`${approve.name} deleted`)).toBeVisible();
+	await expect(page.getByRole("row").filter({ hasText: approve.name })).toHaveCount(0);
+	expect(
+		await sql`select 1 from public.students where email = ${approve.email}`,
+	).toHaveLength(0);
+	// the application is kept as the record of who applied
+	expect(
+		await sql`select 1 from public.applications where email = ${approve.email}`,
+	).toHaveLength(1);
+});
+
 test("signed out, a student's record can't be downloaded", async ({ request }) => {
 	const response = await request.get(
 		"/students/00000000-0000-0000-0000-000000000000/record.pdf",

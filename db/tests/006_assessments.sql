@@ -6,7 +6,7 @@ create extension pgtap with schema tap;
 grant usage on schema tap to anon, authenticated, worker;
 set local search_path = public, tap;
 grant anon, authenticated, worker to current_user with inherit false, set true;
-select plan(37);
+select plan(45);
 
 insert into neon_auth."user" (id, name, email, "emailVerified") values
   ('d0000000-0000-0000-0000-000000000001', 'Head', 'head@tests.invalid', true),
@@ -168,6 +168,42 @@ select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000
 select public.remove_student_login('d0000000-0000-0000-0000-0000000000a1');
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.ada'))::text, true);
 select is((select count(*)::int from public.my_assignments()), 0, 'a removed login reaches nothing');
+
+-- ── deleting a student ─────────────────────────────────────────────────
+-- Bola has a login, an open project with a staff file, and an unpaid invoice
+
+select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
+insert into public.invoices (id, enrolment_id, description, amount_kobo, due_on) values
+  ('d0000000-0000-0000-0000-0000000000f1', 'd0000000-0000-0000-0000-0000000000e2', 'Tuition', 500000, current_date),
+  ('d0000000-0000-0000-0000-0000000000f2', 'd0000000-0000-0000-0000-0000000000e1', 'Tuition', 500000, current_date);
+insert into public.payments (invoice_id, amount_kobo, method, reference, recorded_by)
+values ('d0000000-0000-0000-0000-0000000000f2', 1000, 'cash', 'DEL-1', 'd0000000-0000-0000-0000-000000000001');
+
+select throws_ok($$ select public.delete_student('d0000000-0000-0000-0000-0000000000a1') $$,
+  '23514', 'Ada Obi has payments on record and can''t be deleted. Set their status to Withdrawn instead.',
+  'a student with payments on record can''t be deleted');
+select throws_ok($$ delete from public.students where id = 'd0000000-0000-0000-0000-0000000000a2' $$,
+  '23503', null, 'a plain delete is stopped by the student''s invoice');
+
+select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000002"}', true);
+select throws_ok($$ select public.delete_student('d0000000-0000-0000-0000-0000000000a2') $$,
+  '42501', null, 'an instructor can''t delete a student');
+
+select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
+select is(public.delete_student('d0000000-0000-0000-0000-0000000000a2'),
+  array['submissions/d0000000-0000-0000-0000-0000000000c3/s/marked.pdf'],
+  'the admin deletes a student with no payments, and gets their files'' keys back');
+select is((select count(*)::int from public.students where id = 'd0000000-0000-0000-0000-0000000000a2')
+  + (select count(*)::int from public.enrolments where student_id = 'd0000000-0000-0000-0000-0000000000a2')
+  + (select count(*)::int from public.invoices where id = 'd0000000-0000-0000-0000-0000000000f1')
+  + (select count(*)::int from public.assignments where id = 'd0000000-0000-0000-0000-0000000000c3'),
+  0, 'their enrolments, unpaid invoice and assigned work go with them');
+select is((select count(*)::int from public.assessments), 2, 'the course''s assessments stay');
+select is((select count(*)::int from public.audit_log where action = 'delete_student'
+  and row_id = 'd0000000-0000-0000-0000-0000000000a2'), 1, 'the deletion is in the audit log');
+reset role;
+select is((select count(*)::int from neon_auth."user" where email = 'bola@tests.invalid'),
+  0, 'and their login is gone');
 
 select * from finish();
 rollback;

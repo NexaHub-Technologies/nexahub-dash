@@ -14,6 +14,8 @@ export type OverviewStats = {
 	students: number;
 	courses: number;
 	overdueInvoices: number;
+	/* students' uploads waiting for a mark */
+	workToMark: number;
 };
 
 const today = sql<string>`(now() at time zone 'Africa/Lagos')::date`;
@@ -35,7 +37,10 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 				(select count(distinct student_id) from public.enrolments where status = 'active') as "students",
 				(select count(*) from public.courses) as "courses",
 				(select count(*) from public.invoice_balances
-					where status = 'open' and balance_kobo > 0 and due_on < ${today}) as "overdueInvoices"`.execute(
+					where status = 'open' and balance_kobo > 0 and due_on < ${today}) as "overdueInvoices",
+				(select count(*) from public.assignments g
+					where g.score is null and exists (select 1 from public.submission_files f
+						where f.assignment_id = g.id and f.staff_id is null)) as "workToMark"`.execute(
 				db,
 			);
 			const r = rows[0];
@@ -44,6 +49,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 				students: Number(r?.students ?? 0),
 				courses: Number(r?.courses ?? 0),
 				overdueInvoices: Number(r?.overdueInvoices ?? 0),
+				workToMark: Number(r?.workToMark ?? 0),
 			};
 		});
 	},

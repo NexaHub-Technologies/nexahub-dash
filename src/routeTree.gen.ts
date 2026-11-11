@@ -11,18 +11,25 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignoutRouteImport } from './routes/auth/signout'
 import { Route as FeesPaymentsDotcsvRouteImport } from './routes/fees/payments[.]csv'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as PortalIdRouteImport } from './routes/portal/$id'
+import { Route as PortalPasswordRouteImport } from './routes/portal/password'
 import { Route as AppApplicationsIndexRouteImport } from './routes/_app/applications/index'
 import { Route as AppApplicationsIdRouteImport } from './routes/_app/applications/$id'
+import { Route as AppAssessmentsIndexRouteImport } from './routes/_app/assessments/index'
+import { Route as AppAssessmentsIdRouteImport } from './routes/_app/assessments/$id'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
 import { Route as AppCoursesSlugRouteImport } from './routes/_app/courses/$slug'
 import { Route as AppFeesIndexRouteImport } from './routes/_app/fees/index'
 import { Route as AppFeesPaymentsRouteImport } from './routes/_app/fees/payments'
 import { Route as AppStudentsIndexRouteImport } from './routes/_app/students/index'
 import { Route as AppStudentsIdRouteImport } from './routes/_app/students/$id'
+import { Route as FilesSourceIdRouteImport } from './routes/files/$source.$id'
 import { Route as StudentsIdRecordDotpdfRouteImport } from './routes/students/$id.record[.]pdf'
 
 const AppRoute = AppRouteImport.update({
@@ -32,6 +39,11 @@ const AppRoute = AppRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -54,6 +66,21 @@ const FeesPaymentsDotcsvRoute = FeesPaymentsDotcsvRouteImport.update({
   path: '/fees/payments.csv',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalIdRoute = PortalIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalPasswordRoute = PortalPasswordRouteImport.update({
+  id: '/password',
+  path: '/password',
+  getParentRoute: () => PortalRoute,
+} as any)
 const AppApplicationsIndexRoute = AppApplicationsIndexRouteImport.update({
   id: '/applications/',
   path: '/applications/',
@@ -62,6 +89,16 @@ const AppApplicationsIndexRoute = AppApplicationsIndexRouteImport.update({
 const AppApplicationsIdRoute = AppApplicationsIdRouteImport.update({
   id: '/applications/$id',
   path: '/applications/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssessmentsIndexRoute = AppAssessmentsIndexRouteImport.update({
+  id: '/assessments/',
+  path: '/assessments/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssessmentsIdRoute = AppAssessmentsIdRouteImport.update({
+  id: '/assessments/$id',
+  path: '/assessments/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
@@ -94,6 +131,11 @@ const AppStudentsIdRoute = AppStudentsIdRouteImport.update({
   path: '/students/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const FilesSourceIdRoute = FilesSourceIdRouteImport.update({
+  id: '/files/$source/$id',
+  path: '/files/$source/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentsIdRecordDotpdfRoute = StudentsIdRecordDotpdfRouteImport.update({
   id: '/students/$id/record.pdf',
   path: '/students/$id/record.pdf',
@@ -103,15 +145,22 @@ const StudentsIdRecordDotpdfRoute = StudentsIdRecordDotpdfRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRouteWithChildren
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
   '/fees/payments.csv': typeof FeesPaymentsDotcsvRoute
+  '/portal/$id': typeof PortalIdRoute
+  '/portal/password': typeof PortalPasswordRoute
+  '/portal/': typeof PortalIndexRoute
   '/applications/$id': typeof AppApplicationsIdRoute
+  '/assessments/$id': typeof AppAssessmentsIdRoute
   '/courses/$slug': typeof AppCoursesSlugRoute
   '/fees/payments': typeof AppFeesPaymentsRoute
   '/students/$id': typeof AppStudentsIdRoute
+  '/files/$source/$id': typeof FilesSourceIdRoute
   '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
   '/applications/': typeof AppApplicationsIndexRoute
+  '/assessments/': typeof AppAssessmentsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
   '/fees/': typeof AppFeesIndexRoute
   '/students/': typeof AppStudentsIndexRoute
@@ -121,13 +170,19 @@ export interface FileRoutesByTo {
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
   '/fees/payments.csv': typeof FeesPaymentsDotcsvRoute
+  '/portal/$id': typeof PortalIdRoute
+  '/portal/password': typeof PortalPasswordRoute
   '/': typeof AppIndexRoute
+  '/portal': typeof PortalIndexRoute
   '/applications/$id': typeof AppApplicationsIdRoute
+  '/assessments/$id': typeof AppAssessmentsIdRoute
   '/courses/$slug': typeof AppCoursesSlugRoute
   '/fees/payments': typeof AppFeesPaymentsRoute
   '/students/$id': typeof AppStudentsIdRoute
+  '/files/$source/$id': typeof FilesSourceIdRoute
   '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
   '/applications': typeof AppApplicationsIndexRoute
+  '/assessments': typeof AppAssessmentsIndexRoute
   '/courses': typeof AppCoursesIndexRoute
   '/fees': typeof AppFeesIndexRoute
   '/students': typeof AppStudentsIndexRoute
@@ -136,16 +191,23 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRouteWithChildren
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signout': typeof AuthSignoutRoute
   '/fees/payments.csv': typeof FeesPaymentsDotcsvRoute
+  '/portal/$id': typeof PortalIdRoute
+  '/portal/password': typeof PortalPasswordRoute
   '/_app/': typeof AppIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/_app/applications/$id': typeof AppApplicationsIdRoute
+  '/_app/assessments/$id': typeof AppAssessmentsIdRoute
   '/_app/courses/$slug': typeof AppCoursesSlugRoute
   '/_app/fees/payments': typeof AppFeesPaymentsRoute
   '/_app/students/$id': typeof AppStudentsIdRoute
+  '/files/$source/$id': typeof FilesSourceIdRoute
   '/students/$id/record.pdf': typeof StudentsIdRecordDotpdfRoute
   '/_app/applications/': typeof AppApplicationsIndexRoute
+  '/_app/assessments/': typeof AppAssessmentsIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/fees/': typeof AppFeesIndexRoute
   '/_app/students/': typeof AppStudentsIndexRoute
@@ -155,15 +217,22 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/portal'
     | '/auth/signin'
     | '/auth/signout'
     | '/fees/payments.csv'
+    | '/portal/$id'
+    | '/portal/password'
+    | '/portal/'
     | '/applications/$id'
+    | '/assessments/$id'
     | '/courses/$slug'
     | '/fees/payments'
     | '/students/$id'
+    | '/files/$source/$id'
     | '/students/$id/record.pdf'
     | '/applications/'
+    | '/assessments/'
     | '/courses/'
     | '/fees/'
     | '/students/'
@@ -173,13 +242,19 @@ export interface FileRouteTypes {
     | '/auth/signin'
     | '/auth/signout'
     | '/fees/payments.csv'
+    | '/portal/$id'
+    | '/portal/password'
     | '/'
+    | '/portal'
     | '/applications/$id'
+    | '/assessments/$id'
     | '/courses/$slug'
     | '/fees/payments'
     | '/students/$id'
+    | '/files/$source/$id'
     | '/students/$id/record.pdf'
     | '/applications'
+    | '/assessments'
     | '/courses'
     | '/fees'
     | '/students'
@@ -187,16 +262,23 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/login'
+    | '/portal'
     | '/auth/signin'
     | '/auth/signout'
     | '/fees/payments.csv'
+    | '/portal/$id'
+    | '/portal/password'
     | '/_app/'
+    | '/portal/'
     | '/_app/applications/$id'
+    | '/_app/assessments/$id'
     | '/_app/courses/$slug'
     | '/_app/fees/payments'
     | '/_app/students/$id'
+    | '/files/$source/$id'
     | '/students/$id/record.pdf'
     | '/_app/applications/'
+    | '/_app/assessments/'
     | '/_app/courses/'
     | '/_app/fees/'
     | '/_app/students/'
@@ -205,9 +287,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PortalRoute: typeof PortalRouteWithChildren
   AuthSigninRoute: typeof AuthSigninRoute
   AuthSignoutRoute: typeof AuthSignoutRoute
   FeesPaymentsDotcsvRoute: typeof FeesPaymentsDotcsvRoute
+  FilesSourceIdRoute: typeof FilesSourceIdRoute
   StudentsIdRecordDotpdfRoute: typeof StudentsIdRecordDotpdfRoute
 }
 
@@ -225,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -255,6 +346,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeesPaymentsDotcsvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/$id': {
+      id: '/portal/$id'
+      path: '/$id'
+      fullPath: '/portal/$id'
+      preLoaderRoute: typeof PortalIdRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/password': {
+      id: '/portal/password'
+      path: '/password'
+      fullPath: '/portal/password'
+      preLoaderRoute: typeof PortalPasswordRouteImport
+      parentRoute: typeof PortalRoute
+    }
     '/_app/applications/': {
       id: '/_app/applications/'
       path: '/applications'
@@ -267,6 +379,20 @@ declare module '@tanstack/react-router' {
       path: '/applications/$id'
       fullPath: '/applications/$id'
       preLoaderRoute: typeof AppApplicationsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assessments/': {
+      id: '/_app/assessments/'
+      path: '/assessments'
+      fullPath: '/assessments/'
+      preLoaderRoute: typeof AppAssessmentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assessments/$id': {
+      id: '/_app/assessments/$id'
+      path: '/assessments/$id'
+      fullPath: '/assessments/$id'
+      preLoaderRoute: typeof AppAssessmentsIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/courses/': {
@@ -311,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStudentsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/files/$source/$id': {
+      id: '/files/$source/$id'
+      path: '/files/$source/$id'
+      fullPath: '/files/$source/$id'
+      preLoaderRoute: typeof FilesSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/students/$id/record.pdf': {
       id: '/students/$id/record.pdf'
       path: '/students/$id/record.pdf'
@@ -324,10 +457,12 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppApplicationsIdRoute: typeof AppApplicationsIdRoute
+  AppAssessmentsIdRoute: typeof AppAssessmentsIdRoute
   AppCoursesSlugRoute: typeof AppCoursesSlugRoute
   AppFeesPaymentsRoute: typeof AppFeesPaymentsRoute
   AppStudentsIdRoute: typeof AppStudentsIdRoute
   AppApplicationsIndexRoute: typeof AppApplicationsIndexRoute
+  AppAssessmentsIndexRoute: typeof AppAssessmentsIndexRoute
   AppCoursesIndexRoute: typeof AppCoursesIndexRoute
   AppFeesIndexRoute: typeof AppFeesIndexRoute
   AppStudentsIndexRoute: typeof AppStudentsIndexRoute
@@ -336,10 +471,12 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppApplicationsIdRoute: AppApplicationsIdRoute,
+  AppAssessmentsIdRoute: AppAssessmentsIdRoute,
   AppCoursesSlugRoute: AppCoursesSlugRoute,
   AppFeesPaymentsRoute: AppFeesPaymentsRoute,
   AppStudentsIdRoute: AppStudentsIdRoute,
   AppApplicationsIndexRoute: AppApplicationsIndexRoute,
+  AppAssessmentsIndexRoute: AppAssessmentsIndexRoute,
   AppCoursesIndexRoute: AppCoursesIndexRoute,
   AppFeesIndexRoute: AppFeesIndexRoute,
   AppStudentsIndexRoute: AppStudentsIndexRoute,
@@ -347,12 +484,29 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface PortalRouteChildren {
+  PortalIdRoute: typeof PortalIdRoute
+  PortalPasswordRoute: typeof PortalPasswordRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalIdRoute: PortalIdRoute,
+  PortalPasswordRoute: PortalPasswordRoute,
+  PortalIndexRoute: PortalIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  PortalRoute: PortalRouteWithChildren,
   AuthSigninRoute: AuthSigninRoute,
   AuthSignoutRoute: AuthSignoutRoute,
   FeesPaymentsDotcsvRoute: FeesPaymentsDotcsvRoute,
+  FilesSourceIdRoute: FilesSourceIdRoute,
   StudentsIdRecordDotpdfRoute: StudentsIdRecordDotpdfRoute,
 }
 export const routeTree = rootRouteImport

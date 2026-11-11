@@ -14,7 +14,7 @@ export type OverviewStats = {
 	students: number;
 	courses: number;
 	overdueInvoices: number;
-	/* students' uploads waiting for a mark */
+	/* students' uploads waiting for a grade */
 	workToMark: number;
 };
 
@@ -39,7 +39,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 				(select count(*) from public.invoice_balances
 					where status = 'open' and balance_kobo > 0 and due_on < ${today}) as "overdueInvoices",
 				(select count(*) from public.assignments g
-					where g.score is null and exists (select 1 from public.submission_files f
+					where g.grade is null and exists (select 1 from public.submission_files f
 						where f.assignment_id = g.id and f.staff_id is null)) as "workToMark"`.execute(
 				db,
 			);

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "kysely";
-import type { AssessmentKind } from "./assessment-status";
+import type { AssessmentKind, Grade } from "./assessment-status";
 import { getStudent } from "./auth";
 import { withStaff } from "./db.server";
 import {
@@ -26,10 +26,9 @@ export type MyWork = {
 	kind: AssessmentKind;
 	title: string;
 	brief: string | null;
-	max_score: number;
 	locked: boolean;
 	due_on: string | null;
-	score: number | null;
+	grade: Grade | null;
 	feedback: string | null;
 	marked_at: string | null;
 	submitted_at: string | null;
@@ -60,17 +59,16 @@ const toWork = (r: Record<string, unknown>): MyWork => ({
 	kind: r.kind as AssessmentKind,
 	title: String(r.title),
 	brief: (r.brief as string | null) ?? null,
-	max_score: Number(r.max_score),
 	locked: Boolean(r.locked),
 	due_on: (r.due_on as string | null) ?? null,
-	score: r.score === null ? null : Number(r.score),
+	grade: (r.grade as Grade | null) ?? null,
 	feedback: (r.feedback as string | null) ?? null,
 	marked_at: iso(r.marked_at),
 	submitted_at: iso(r.submitted_at),
 });
 
-const WORK = sql`id, course, kind::text, title, brief, max_score, locked,
-	due_on::text, score, feedback, marked_at, submitted_at`;
+const WORK = sql`id, course, kind::text, title, brief, locked,
+	due_on::text, grade::text, feedback, marked_at, submitted_at`;
 
 export const listMyWork = createServerFn({ method: "GET" }).handler(
 	async (): Promise<MyWork[]> => {
@@ -127,8 +125,8 @@ export const startSubmission = createServerFn({ method: "POST" })
 		try {
 			const student = await signedIn();
 			const { rows } = await withStaff(student.auth_id, (db) =>
-				sql<{ locked: boolean; score: number | null }>`
-					select locked, score from public.my_assignments() where id = ${data.id}`.execute(
+				sql<{ locked: boolean; grade: string | null }>`
+					select locked, grade::text from public.my_assignments() where id = ${data.id}`.execute(
 					db,
 				),
 			);
@@ -136,10 +134,10 @@ export const startSubmission = createServerFn({ method: "POST" })
 			if (!work || work.locked) {
 				return { ok: false, message: "This work isn't open to you." };
 			}
-			if (work.score !== null) {
+			if (work.grade !== null) {
 				return {
 					ok: false,
-					message: "This work has been marked. Ask your tutor to reopen it.",
+					message: "This work has been graded. Ask your tutor to reopen it.",
 				};
 			}
 			const key = `${folder(data.id)}${randomUUID()}/${keyName(data.name)}`;

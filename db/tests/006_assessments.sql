@@ -31,9 +31,9 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
 
 select lives_ok($$
-  insert into public.assessments (id, course_slug, kind, title, brief, max_score, position) values
-    ('d0000000-0000-0000-0000-0000000000b1', 'work-course', 'project', 'Build a site', 'Three pages.', 100, 1),
-    ('d0000000-0000-0000-0000-0000000000b2', 'work-course', 'exercise', 'Warm-up', 'Ten questions.', 10, 2)
+  insert into public.assessments (id, course_slug, kind, title, brief, position) values
+    ('d0000000-0000-0000-0000-0000000000b1', 'work-course', 'project', 'Build a site', 'Three pages.', 1),
+    ('d0000000-0000-0000-0000-0000000000b2', 'work-course', 'exercise', 'Warm-up', 'Ten questions.', 2)
 $$, 'the admin types in a course''s track');
 select is((select created_by from public.assessments where id = 'd0000000-0000-0000-0000-0000000000b1'),
   'd0000000-0000-0000-0000-000000000001'::uuid, 'which records who added it');
@@ -57,19 +57,17 @@ select throws_ok($$
   values ('d0000000-0000-0000-0000-0000000000b1', 'd0000000-0000-0000-0000-0000000000e1')
 $$, '23505', null, 'and only once each');
 
-select throws_ok($$ update public.assignments set score = 11 where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
-  '23514', 'The score can''t be more than 10', 'a score can''t exceed the maximum');
-select lives_ok($$ update public.assignments set score = 8, feedback = 'Good' where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
-  'the admin enters a score and feedback');
+select throws_ok($$ update public.assignments set grade = 'superb' where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
+  '22P02', null, 'a grade is one of the four');
+select lives_ok($$ update public.assignments set grade = 'very_good', feedback = 'Good' where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
+  'the admin gives a grade and feedback');
 select is((select marked_by from public.assignments where id = 'd0000000-0000-0000-0000-0000000000c2'),
   'd0000000-0000-0000-0000-000000000001'::uuid, 'which is stamped with who marked it');
-select throws_ok($$ update public.assessments set max_score = 5 where id = 'd0000000-0000-0000-0000-0000000000b2' $$,
-  '23514', 'A student already has a score above 5', 'the maximum can''t drop below a score given');
 select throws_ok($$ update public.assessments set course_slug = 'other-course' where id = 'd0000000-0000-0000-0000-0000000000b2' $$,
-  '23514', null, 'and an assessment stays on its course');
-update public.assignments set score = null where id = 'd0000000-0000-0000-0000-0000000000c2';
+  '23514', null, 'an assessment stays on its course');
+update public.assignments set grade = null where id = 'd0000000-0000-0000-0000-0000000000c2';
 select is((select marked_at from public.assignments where id = 'd0000000-0000-0000-0000-0000000000c2'),
-  null, 'clearing the score clears the mark');
+  null, 'clearing the grade clears the mark');
 
 select throws_ok($$
   insert into public.submission_files (assignment_id, name, storage_key, size_bytes)
@@ -155,13 +153,15 @@ select isnt((select submitted_at from public.my_assignments() where id = 'd00000
 -- the admin opens the project, then marks the exercise
 select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
 update public.assignments set opened_at = now() where id = 'd0000000-0000-0000-0000-0000000000c1';
-update public.assignments set score = 9 where id = 'd0000000-0000-0000-0000-0000000000c2';
+update public.assignments set grade = 'excellent' where id = 'd0000000-0000-0000-0000-0000000000c2';
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.ada'))::text, true);
 
 select is((select count(*)::int from public.my_assignment_files('d0000000-0000-0000-0000-0000000000c1')),
   1, 'once opened, the project''s brief file is there to download');
 select throws_ok($$ select public.my_remove_file((select id from public.my_assignment_files('d0000000-0000-0000-0000-0000000000c2')
-  where source = 'mine')) $$, '23514', null, 'marked work can''t be changed');
+  where source = 'mine')) $$, '23514', null, 'graded work can''t be changed');
+select is((select grade::text from public.my_assignments() where id = 'd0000000-0000-0000-0000-0000000000c2'),
+  'excellent', 'and the student sees their grade');
 
 -- the admin takes the login away
 select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);

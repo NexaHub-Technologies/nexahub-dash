@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_app/assessments/")({
 
 /* Every course's assessment track: the projects and exercises typed in for
    it, in order, with how many students have each and how many uploads are
-   waiting for a mark. */
+   waiting for a grade. */
 function Assessments() {
 	const { rows, courses } = Route.useLoaderData();
 	const search = Route.useSearch();
@@ -109,9 +109,9 @@ function Assessments() {
 										<TableHead className="hidden text-right md:table-cell">
 											Locked
 										</TableHead>
-										<TableHead className="text-right">To mark</TableHead>
+										<TableHead className="text-right">To grade</TableHead>
 										<TableHead className="hidden text-right sm:table-cell">
-											Marked
+											Graded
 										</TableHead>
 									</TableRow>
 								</TableHeader>
@@ -128,8 +128,8 @@ function Assessments() {
 														{i + 1}. {a.title}
 													</span>
 													<span className="text-xs text-muted-foreground">
-														{KIND_LABEL[a.kind]} · out of {a.max_score} ·{" "}
-														{a.files} {a.files === 1 ? "file" : "files"}
+														{KIND_LABEL[a.kind]} · {a.files}{" "}
+														{a.files === 1 ? "file" : "files"}
 													</span>
 												</Link>
 											</TableCell>
@@ -142,7 +142,7 @@ function Assessments() {
 											<TableCell className="text-right">
 												{a.toMark ? (
 													<TonePill tone="warning">
-														{formatCount(a.toMark)} to mark
+														{formatCount(a.toMark)} to grade
 													</TonePill>
 												) : (
 													<span className="text-muted-foreground">—</span>

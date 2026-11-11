@@ -2,7 +2,12 @@ import { randomInt, randomUUID } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { hashPassword } from "better-auth/crypto";
 import { sql } from "kysely";
-import { type AssessmentKind, isKind } from "./assessment-status";
+import {
+	type AssessmentKind,
+	type Grade,
+	isGrade,
+	isKind,
+} from "./assessment-status";
 import { getStaff } from "./auth";
 import { withStaff } from "./db.server";
 import {
@@ -17,7 +22,7 @@ import { removeStored, signUpload, storedSize } from "./storage.server";
 
 /* Assessments as the admin works them: each course's track of projects and
    exercises, typed in by hand; who each is assigned to; opening and locking;
-   the files either way; and the marks. Admins only: row-level security
+   the files either way; and the grades. Admins only: row-level security
    returns nothing to anyone else, so every change below that touches no row
    answers "only an admin". Students reach their own work through the
    portal (portal.ts), never through these. */
@@ -28,7 +33,6 @@ export type AssessmentRow = {
 	course: string;
 	kind: AssessmentKind;
 	title: string;
-	max_score: number;
 	files: number;
 	assigned: number;
 	locked: number;
@@ -52,7 +56,7 @@ export type AssignmentRow = {
 	enrolment_status: EnrolmentStatus;
 	locked: boolean;
 	due_on: string | null;
-	score: number | null;
+	grade: Grade | null;
 	feedback: string | null;
 	marked_at: string | null;
 	files: StoredFile[];
@@ -65,7 +69,6 @@ export type AssessmentDetail = {
 	kind: AssessmentKind;
 	title: string;
 	brief: string;
-	max_score: number;
 	position: number;
 	files: StoredFile[];
 	assignments: AssignmentRow[];
@@ -86,10 +89,9 @@ export type StudentCoursework = {
 		course: string;
 		kind: AssessmentKind;
 		title: string;
-		max_score: number;
 		locked: boolean;
 		submitted: boolean;
-		score: number | null;
+		grade: Grade | null;
 		due_on: string | null;
 	}[];
 };
@@ -118,14 +120,14 @@ export const listAssessments = createServerFn({ method: "GET" })
 		return withStaff(staff.id, async (db) => {
 			const { rows } = await sql<Record<string, unknown>>`
 				select a.id, a.course_slug, coalesce(c.title, a.course_slug) as course,
-					a.kind::text, a.title, a.max_score,
+					a.kind::text, a.title,
 					(select count(*) from public.assessment_files f where f.assessment_id = a.id) as files,
 					count(g.id) as assigned,
-					count(g.id) filter (where g.opened_at is null and g.score is null) as locked,
-					count(g.id) filter (where g.score is null and exists (
+					count(g.id) filter (where g.opened_at is null and g.grade is null) as locked,
+					count(g.id) filter (where g.grade is null and exists (
 						select 1 from public.submission_files f
 						where f.assignment_id = g.id and f.staff_id is null)) as to_mark,
-					count(g.id) filter (where g.score is not null) as marked
+					count(g.id) filter (where g.grade is not null) as marked
 				from public.assessments a
 				left join public.courses c on c.slug = a.course_slug
 				left join public.assignments g on g.assessment_id = a.id
@@ -147,7 +149,6 @@ export const listAssessments = createServerFn({ method: "GET" })
 						course: String(r.course),
 						kind: r.kind as AssessmentKind,
 						title: String(r.title),
-						max_score: Number(r.max_score),
 						files: Number(r.files),
 						assigned: Number(r.assigned),
 						locked: Number(r.locked),
@@ -175,7 +176,6 @@ export const getAssessment = createServerFn({ method: "GET" })
 					"a.kind",
 					"a.title",
 					"a.brief",
-					"a.max_score",
 					"a.position",
 					sql<string>`coalesce(c.title, a.course_slug)`.as("course"),
 				])
@@ -198,7 +198,7 @@ export const getAssessment = createServerFn({ method: "GET" })
 					"g.id",
 					"g.opened_at",
 					"g.due_on",
-					"g.score",
+					"g.grade",
 					"g.feedback",
 					"g.marked_at",
 					"e.status",
@@ -243,7 +243,6 @@ export const getAssessment = createServerFn({ method: "GET" })
 				kind: a.kind as AssessmentKind,
 				title: a.title,
 				brief: a.brief,
-				max_score: a.max_score,
 				position: a.position,
 				files: files.map((f) => ({
 					id: f.id,
@@ -258,7 +257,7 @@ export const getAssessment = createServerFn({ method: "GET" })
 					enrolment_status: g.status as EnrolmentStatus,
 					locked: g.opened_at === null,
 					due_on: dateText(g.due_on),
-					score: g.score,
+					grade: g.grade,
 					feedback: g.feedback,
 					marked_at: g.marked_at ? iso(g.marked_at) : null,
 					files: submitted
@@ -281,7 +280,6 @@ export const getAssessment = createServerFn({ method: "GET" })
 	});
 
 function assessmentFields(o: Record<string, unknown>) {
-	const max = Number(o.maxScore);
 	return {
 		kind: isKind(o.kind) ? o.kind : null,
 		title: String(o.title ?? "")
@@ -290,7 +288,6 @@ function assessmentFields(o: Record<string, unknown>) {
 		brief: String(o.brief ?? "")
 			.trim()
 			.slice(0, 5000),
-		maxScore: Number.isInteger(max) && max >= 1 && max <= 1000 ? max : null,
 	};
 }
 
@@ -311,19 +308,13 @@ export const createAssessment = createServerFn({ method: "POST" })
 		if (!data.kind)
 			return { ok: false, message: "Choose project or exercise." };
 		if (!data.title) return { ok: false, message: "Give it a title." };
-		if (!data.maxScore) {
-			return {
-				ok: false,
-				message: "The maximum score is a whole number from 1 to 1000.",
-			};
-		}
-		const { kind, title, brief, maxScore, course } = data;
+		const { kind, title, brief, course } = data;
 		try {
 			const staff = await signedIn();
 			return await withStaff(staff.id, async (db) => {
 				const { rows } = await sql<{ id: string }>`
-					insert into public.assessments (course_slug, kind, title, brief, max_score, position)
-					values (${course}, ${kind}, ${title}, ${brief}, ${maxScore},
+					insert into public.assessments (course_slug, kind, title, brief, position)
+					values (${course}, ${kind}, ${title}, ${brief},
 						(select coalesce(max(position), 0) + 1 from public.assessments where course_slug = ${course}))
 					returning id`.execute(db);
 				const id = rows[0]?.id;
@@ -366,22 +357,16 @@ export const updateAssessment = createServerFn({ method: "POST" })
 		if (!data.kind)
 			return { ok: false, message: "Choose project or exercise." };
 		if (!data.title) return { ok: false, message: "Give it a title." };
-		if (!data.maxScore) {
-			return {
-				ok: false,
-				message: "The maximum score is a whole number from 1 to 1000.",
-			};
-		}
 		if (data.position === null) {
 			return { ok: false, message: "The order is a whole number." };
 		}
-		const { kind, title, brief, maxScore, position } = data;
+		const { kind, title, brief, position } = data;
 		try {
 			const staff = await signedIn();
 			const r = await withStaff(staff.id, (db) =>
 				db
 					.updateTable("assessments")
-					.set({ kind, title, brief, max_score: maxScore, position })
+					.set({ kind, title, brief, position })
 					.where("id", "=", data.id)
 					.executeTakeFirst(),
 			);
@@ -394,7 +379,7 @@ export const updateAssessment = createServerFn({ method: "POST" })
 	});
 
 /* Deletes the work for everyone: its brief files, every student's uploads
-   and their marks go with it. */
+   and their grades go with it. */
 export const deleteAssessment = createServerFn({ method: "POST" })
 	.validator((id: unknown) => uuid(id))
 	.handler(async ({ data: id }): Promise<Outcome> => {
@@ -514,16 +499,15 @@ export const setAssignmentsOpen = createServerFn({ method: "POST" })
 		}
 	});
 
-/* The admin's mark for one student: a score out of the assessment's
-   maximum (blank clears it), feedback, and the due date. */
+/* The admin's mark for one student: a grade in words (none clears it),
+   feedback, and the due date. */
 export const markAssignment = createServerFn({ method: "POST" })
 	.validator((d: unknown) => {
 		const o = (d ?? {}) as Record<string, unknown>;
-		const raw = String(o.score ?? "").trim();
 		const due = String(o.dueOn ?? "");
 		return {
 			id: uuid(o.id),
-			score: raw === "" ? null : Number(raw),
+			grade: isGrade(o.grade) ? o.grade : null,
 			feedback:
 				String(o.feedback ?? "")
 					.trim()
@@ -532,22 +516,13 @@ export const markAssignment = createServerFn({ method: "POST" })
 		};
 	})
 	.handler(async ({ data }): Promise<Outcome> => {
-		if (
-			data.score !== null &&
-			(!Number.isInteger(data.score) || data.score < 0)
-		) {
-			return {
-				ok: false,
-				message: "The score is a whole number, or blank for not yet marked.",
-			};
-		}
 		try {
 			const staff = await signedIn();
 			const r = await withStaff(staff.id, (db) =>
 				db
 					.updateTable("assignments")
 					.set({
-						score: data.score,
+						grade: data.grade,
 						feedback: data.feedback,
 						due_on: data.dueOn,
 					})
@@ -723,10 +698,10 @@ export const getStudentCoursework = createServerFn({ method: "GET" })
 				: undefined;
 			const { rows } = await sql<Record<string, unknown>>`
 				select g.id, a.id as assessment_id, coalesce(c.title, a.course_slug) as course,
-					a.kind::text, a.title, a.max_score, g.opened_at is null as locked,
+					a.kind::text, a.title, g.opened_at is null as locked,
 					exists (select 1 from public.submission_files f
 						where f.assignment_id = g.id and f.staff_id is null) as submitted,
-					g.score, g.due_on::text
+					g.grade::text, g.due_on::text
 				from public.assignments g
 				join public.assessments a on a.id = g.assessment_id
 				join public.enrolments e on e.id = g.enrolment_id
@@ -744,10 +719,9 @@ export const getStudentCoursework = createServerFn({ method: "GET" })
 					course: String(r.course),
 					kind: r.kind as AssessmentKind,
 					title: String(r.title),
-					max_score: Number(r.max_score),
 					locked: Boolean(r.locked),
 					submitted: Boolean(r.submitted),
-					score: r.score === null ? null : Number(r.score),
+					grade: (r.grade as Grade | null) ?? null,
 					due_on: (r.due_on as string | null) ?? null,
 				})),
 			};

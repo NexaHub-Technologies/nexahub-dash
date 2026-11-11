@@ -21,7 +21,7 @@ import {
 } from "#/components/dashboard/assessment-dialogs";
 import { Panel, PanelEmpty } from "#/components/dashboard/blocks";
 import { FileList, UploadButton } from "#/components/dashboard/files";
-import { TonePill } from "#/components/dashboard/status-badge";
+import { GradeBadge, TonePill } from "#/components/dashboard/status-badge";
 import { useApply } from "#/components/dashboard/use-apply";
 import {
 	AlertDialog,
@@ -52,7 +52,6 @@ import {
 } from "#/components/ui/table";
 import {
 	KIND_LABEL,
-	scoreText,
 	WORK_LABEL,
 	WORK_TONE,
 	workState,
@@ -85,7 +84,7 @@ export const Route = createFileRoute("/_app/assessments/$id")({
 const studentFiles = (g: AssignmentRow) => g.files.filter((f) => !f.staff);
 
 /* One piece of work: its brief and files, and every student it is assigned
-   to, with the lock, their uploads and their mark. */
+   to, with the lock, their uploads and their grade. */
 function AssessmentPage() {
 	const a = Route.useLoaderData();
 	const apply = useApply();
@@ -100,7 +99,7 @@ function AssessmentPage() {
 				<div className="flex flex-col gap-1">
 					<h1 className="text-2xl font-bold">{a.title}</h1>
 					<p className="text-sm text-muted-foreground">
-						{KIND_LABEL[a.kind]} · {a.course} · marked out of {a.max_score}
+						{KIND_LABEL[a.kind]} · {a.course}
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
@@ -181,7 +180,7 @@ function AssessmentPage() {
 								<TableRow>
 									<TableHead>Student</TableHead>
 									<TableHead className="hidden sm:table-cell">Due</TableHead>
-									<TableHead className="text-right">Score</TableHead>
+									<TableHead className="text-right">Grade</TableHead>
 									<TableHead className="text-right">
 										<span className="sr-only">Actions</span>
 									</TableHead>
@@ -244,7 +243,7 @@ function AssessmentPage() {
 						<AlertDialogTitle>Delete “{a.title}”?</AlertDialogTitle>
 						<AlertDialogDescription>
 							{a.assignments.length
-								? `It is removed for all ${a.assignments.length} students it is assigned to, with their uploads and marks. This can't be undone.`
+								? `It is removed for all ${a.assignments.length} students it is assigned to, with their uploads and grades. This can't be undone.`
 								: "Its brief and files are removed. This can't be undone."}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
@@ -288,7 +287,7 @@ function StudentRow({
 	const state = workState({
 		locked: g.locked,
 		submitted: uploads > 0,
-		score: g.score,
+		grade: g.grade,
 	});
 
 	return (
@@ -313,13 +312,13 @@ function StudentRow({
 			<TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">
 				{g.due_on ? formatDate(g.due_on) : "—"}
 			</TableCell>
-			<TableCell className="text-right font-medium tabular-nums">
-				{g.score === null ? "—" : scoreText(g.score, a.max_score)}
+			<TableCell className="text-right">
+				<GradeBadge grade={g.grade} />
 			</TableCell>
 			<TableCell className="text-right">
 				<div className="flex justify-end gap-1">
 					<Button variant="outline" size="sm" onClick={() => setMarking(true)}>
-						{g.score === null ? "Mark" : "Review"}
+						{g.grade === null ? "Grade" : "Review"}
 					</Button>
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -381,7 +380,7 @@ function StudentRow({
 								Remove this work from {g.full_name}?
 							</AlertDialogTitle>
 							<AlertDialogDescription>
-								Their uploads and mark for “{a.title}” are deleted. This can't
+								Their uploads and grade for “{a.title}” are deleted. This can't
 								be undone.
 							</AlertDialogDescription>
 						</AlertDialogHeader>

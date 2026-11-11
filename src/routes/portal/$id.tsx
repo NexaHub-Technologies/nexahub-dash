@@ -13,8 +13,8 @@ import {
 	CardTitle,
 } from "#/components/ui/card";
 import {
+	GRADE_LABEL,
 	KIND_LABEL,
-	scoreText,
 	WORK_LABEL,
 	WORK_TONE,
 	workState,
@@ -40,15 +40,15 @@ export const Route = createFileRoute("/portal/$id")({
 });
 
 /* One open piece of work: the brief and its files to download, the
-   student's own uploads, and the mark once there is one. */
+   student's own uploads, and the grade once there is one. */
 function WorkPage() {
 	const { work: w, files } = Route.useLoaderData();
 	const apply = useApply();
-	const marked = w.score !== null;
+	const marked = w.grade !== null;
 	const state = workState({
 		locked: false,
 		submitted: w.submitted_at !== null,
-		score: w.score,
+		grade: w.grade,
 	});
 	const href = (f: MyFile) =>
 		`/files/${f.source === "brief" ? "brief" : "submission"}/${f.id}?work=${w.id}`;
@@ -80,9 +80,9 @@ function WorkPage() {
 			{marked ? (
 				<Card>
 					<CardHeader>
-						<CardDescription>Your mark</CardDescription>
-						<CardTitle className="font-heading text-4xl font-extrabold tabular-nums">
-							{scoreText(w.score ?? 0, w.max_score)}
+						<CardDescription>Your grade</CardDescription>
+						<CardTitle className="font-heading text-4xl font-extrabold">
+							{w.grade ? GRADE_LABEL[w.grade] : null}
 						</CardTitle>
 					</CardHeader>
 					{w.feedback || fromTutor.length ? (
@@ -133,7 +133,7 @@ function WorkPage() {
 					<CardTitle>Your work</CardTitle>
 					<CardDescription>
 						{marked
-							? "This has been marked, so it can't be changed."
+							? "This has been graded, so it can't be changed."
 							: `Upload your files here, up to ${MAX_FILE_LABEL} each. For a whole folder, zip it first.`}
 					</CardDescription>
 					{marked ? null : (

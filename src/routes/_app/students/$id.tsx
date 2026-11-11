@@ -19,7 +19,11 @@ import {
 	AddInvoiceButton,
 	InvoiceActions,
 } from "#/components/dashboard/fee-dialogs";
-import { StatusBadge, TonePill } from "#/components/dashboard/status-badge";
+import {
+	GradeBadge,
+	StatusBadge,
+	TonePill,
+} from "#/components/dashboard/status-badge";
 import { useApply } from "#/components/dashboard/use-apply";
 import {
 	AlertDialog,
@@ -78,7 +82,6 @@ import { Textarea } from "#/components/ui/textarea";
 import { toast } from "#/components/ui/toast";
 import {
 	KIND_LABEL,
-	scoreText,
 	WORK_LABEL,
 	WORK_TONE,
 	workState,
@@ -683,7 +686,7 @@ function CourseworkCard({ coursework }: { coursework: StudentCoursework }) {
 							<TableRow>
 								<TableHead>Work</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead className="text-right">Score</TableHead>
+								<TableHead className="text-right">Grade</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -711,8 +714,8 @@ function CourseworkCard({ coursework }: { coursework: StudentCoursework }) {
 												{WORK_LABEL[state]}
 											</TonePill>
 										</TableCell>
-										<TableCell className="text-right font-medium tabular-nums">
-											{w.score === null ? "—" : scoreText(w.score, w.max_score)}
+										<TableCell className="text-right">
+											<GradeBadge grade={w.grade} />
 										</TableCell>
 									</TableRow>
 								);
@@ -831,7 +834,7 @@ function LoginCard({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Remove {s.full_name}'s login?</AlertDialogTitle>
 						<AlertDialogDescription>
-							They are signed out and can't sign back in. Their work and marks
+							They are signed out and can't sign back in. Their work and grades
 							are kept, and you can create a new login later.
 						</AlertDialogDescription>
 					</AlertDialogHeader>

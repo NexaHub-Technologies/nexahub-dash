@@ -7,6 +7,8 @@ import type { ColumnType } from "kysely";
 
 export type ApplicationStatus = "approved" | "declined" | "new";
 
+export type AssessmentGrade = "bad" | "excellent" | "good" | "very_good";
+
 export type AssessmentKind = "exercise" | "project";
 
 export type Channel = "email" | "sms";
@@ -84,7 +86,6 @@ export interface Assessments {
   created_by: Generated<string | null>;
   id: Generated<string>;
   kind: AssessmentKind;
-  max_score: Generated<number>;
   position: Generated<number>;
   title: string;
 }
@@ -95,11 +96,11 @@ export interface Assignments {
   due_on: Timestamp | null;
   enrolment_id: string;
   feedback: string | null;
+  grade: AssessmentGrade | null;
   id: Generated<string>;
   marked_at: Timestamp | null;
   marked_by: string | null;
   opened_at: Timestamp | null;
-  score: number | null;
 }
 
 export interface AuditLog {

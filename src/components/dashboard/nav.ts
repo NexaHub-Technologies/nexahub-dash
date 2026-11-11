@@ -58,7 +58,9 @@ export const MAIN_NAV: NavItem[] = [
 		Icon: ClipboardListIcon,
 		admin: true,
 		hint: (s) =>
-			s.workToMark ? `${formatCount(s.workToMark)} to mark` : "Nothing to mark",
+			s.workToMark
+				? `${formatCount(s.workToMark)} to grade`
+				: "Nothing to grade",
 		alert: (s) => s.workToMark,
 	},
 	{

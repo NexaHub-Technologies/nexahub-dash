@@ -3,6 +3,7 @@ import {
 	Link,
 	notFound,
 	redirect,
+	useNavigate,
 } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
@@ -11,13 +12,18 @@ import {
 	DownloadIcon,
 	KeyRoundIcon,
 	PencilIcon,
+	Trash2Icon,
 } from "lucide-react";
 import { useState } from "react";
 import {
 	AddInvoiceButton,
 	InvoiceActions,
 } from "#/components/dashboard/fee-dialogs";
-import { StatusBadge, TonePill } from "#/components/dashboard/status-badge";
+import {
+	GradeBadge,
+	StatusBadge,
+	TonePill,
+} from "#/components/dashboard/status-badge";
 import { useApply } from "#/components/dashboard/use-apply";
 import {
 	AlertDialog,
@@ -76,7 +82,6 @@ import { Textarea } from "#/components/ui/textarea";
 import { toast } from "#/components/ui/toast";
 import {
 	KIND_LABEL,
-	scoreText,
 	WORK_LABEL,
 	WORK_TONE,
 	workState,
@@ -95,6 +100,7 @@ import {
 	STATUSES,
 } from "#/lib/status";
 import {
+	deleteStudent,
 	getStudent,
 	type StudentDetail,
 	setEnrolmentStatus,
@@ -168,6 +174,7 @@ function StudentPage() {
 						<DownloadIcon data-icon="inline-start" />
 						Download PDF
 					</Button>
+					<DeleteStudentButton student={s} />
 				</div>
 			</div>
 
@@ -679,7 +686,7 @@ function CourseworkCard({ coursework }: { coursework: StudentCoursework }) {
 							<TableRow>
 								<TableHead>Work</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead className="text-right">Score</TableHead>
+								<TableHead className="text-right">Grade</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -707,8 +714,8 @@ function CourseworkCard({ coursework }: { coursework: StudentCoursework }) {
 												{WORK_LABEL[state]}
 											</TonePill>
 										</TableCell>
-										<TableCell className="text-right font-medium tabular-nums">
-											{w.score === null ? "—" : scoreText(w.score, w.max_score)}
+										<TableCell className="text-right">
+											<GradeBadge grade={w.grade} />
 										</TableCell>
 									</TableRow>
 								);
@@ -827,7 +834,7 @@ function LoginCard({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Remove {s.full_name}'s login?</AlertDialogTitle>
 						<AlertDialogDescription>
-							They are signed out and can't sign back in. Their work and marks
+							They are signed out and can't sign back in. Their work and grades
 							are kept, and you can create a new login later.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
@@ -845,5 +852,59 @@ function LoginCard({
 				</AlertDialogContent>
 			</AlertDialog>
 		</Card>
+	);
+}
+
+/* Deletes the student outright, after saying exactly what goes with them.
+   Meant for a mistake; a student who has paid is refused by the database
+   and should be withdrawn instead. */
+function DeleteStudentButton({ student: s }: { student: StudentDetail }) {
+	const apply = useApply();
+	const navigate = useNavigate();
+	const [open, setOpen] = useState(false);
+	const [pending, setPending] = useState(false);
+
+	async function remove() {
+		setPending(true);
+		const ok = await apply(
+			deleteStudent({ data: s.id }),
+			`${s.full_name} deleted`,
+		);
+		setPending(false);
+		setOpen(false);
+		if (ok) await navigate({ to: "/students" });
+	}
+
+	return (
+		<>
+			<Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+				<Trash2Icon data-icon="inline-start" />
+				Delete
+			</Button>
+			<AlertDialog open={open} onOpenChange={setOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete {s.full_name}?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Their enrolments, unpaid invoices, assessments, uploaded files and
+							portal login are deleted with them. This can't be undone. Their
+							application is kept. A student who has paid can't be deleted: set
+							their status to Withdrawn instead.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Keep student</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							disabled={pending}
+							onClick={remove}
+						>
+							{pending && <Spinner data-icon="inline-start" />}
+							Delete student
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }

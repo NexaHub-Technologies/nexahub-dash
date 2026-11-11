@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { GRADE_LABEL, GRADE_TONE, type Grade } from "#/lib/assessment-status";
 import { type EnrolmentStatus, STATUS_LABEL, STATUS_TONE } from "#/lib/status";
 import { cn } from "#/lib/utils";
 
@@ -48,4 +49,10 @@ export function StatusBadge({
 			{STATUS_LABEL[status]}
 		</TonePill>
 	);
+}
+
+/* The grade a piece of work was given, or a dash while it has none. */
+export function GradeBadge({ grade }: { grade: Grade | null }) {
+	if (!grade) return <span className="text-muted-foreground">—</span>;
+	return <TonePill tone={GRADE_TONE[grade]}>{GRADE_LABEL[grade]}</TonePill>;
 }

@@ -10,7 +10,7 @@ test.describe.configure({ timeout: 240_000 });
    the admin types a project into a course's track, attaches a file and
    gives the student a login; the student finds it locked; the admin opens
    it; the student downloads the brief and uploads their work; the admin
-   downloads that and marks it; the student sees the mark. Each project
+   downloads that and grades it; the student sees the grade. Each project
    (desktop, mobile) gets its own student, cleaned up afterwards.
    Owner-only, on the branch the tests use, which needs file storage
    (AWS_* in .env, and scripts/storage-setup.ts run once). */
@@ -65,7 +65,7 @@ async function download(page: Page, name: string) {
 	return (await readFile(await file.path())).toString();
 }
 
-test("a project is set, kept locked, opened, handed in and marked", async ({
+test("a project is set, kept locked, opened, handed in and graded", async ({
 	page,
 	browser,
 	baseURL,
@@ -184,33 +184,30 @@ test("a project is set, kept locked, opened, handed in and marked", async ({
 		timeout: 30_000,
 	});
 
-	// the admin sees it waiting, downloads it and marks it
+	// the admin sees it waiting, downloads it and grades it in words
 	await page.reload();
 	await hydrated(page);
 	await expect(row).toContainText("Submitted");
-	await row.getByRole("button", { name: "Mark" }).click();
+	await row.getByRole("button", { name: "Grade", exact: true }).click();
 	const mark = page.getByRole("dialog", { name: s.name });
 	expect(await download(page, "my-site.zip")).toBe("pretend this is a zip");
-	await mark.getByLabel("Score (out of 100)").fill("85");
+	await mark.getByRole("combobox", { name: "Grade" }).click();
+	await expect(page.getByRole("option")).toHaveText([
+		"Not graded yet",
+		"Bad",
+		"Good",
+		"Very good",
+		"Excellent",
+	]);
+	await page.getByRole("option", { name: "Very good" }).click();
 	await mark.getByLabel("Feedback").fill("Clean layout. Add alt text.");
 	await mark.getByRole("button", { name: "Save" }).click();
-	await expect(row).toContainText("85 / 100", { timeout: 20_000 });
-	await expect(row).toContainText("Marked");
+	await expect(row).toContainText("Very good", { timeout: 20_000 });
+	await expect(row).toContainText("Graded");
 
-	// a score above the maximum is refused in the database's own words
-	await row.getByRole("button", { name: "Review" }).click();
-	await mark.getByLabel("Score (out of 100)").evaluate((el) => {
-		el.removeAttribute("max");
-	});
-	await mark.getByLabel("Score (out of 100)").fill("101");
-	await mark.getByRole("button", { name: "Save" }).click();
-	await expect(page.getByText("The score can't be more than 100")).toBeVisible({
-		timeout: 20_000,
-	});
-
-	// the student sees the mark, and marked work can't be changed
+	// the student sees the grade, and graded work can't be changed
 	await portal.reload();
-	await expect(portal.getByText("85 / 100")).toBeVisible({ timeout: 20_000 });
+	await expect(portal.getByText("Very good")).toBeVisible({ timeout: 20_000 });
 	await expect(portal.getByText("Clean layout. Add alt text.")).toBeVisible();
 	await expect(portal.getByLabel("Upload")).toHaveCount(0);
 	await theirs.close();

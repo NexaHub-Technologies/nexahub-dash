@@ -6,7 +6,7 @@ create extension pgtap with schema tap;
 grant usage on schema tap to anon, authenticated, worker;
 set local search_path = public, tap;
 grant anon, authenticated, worker to current_user with inherit false, set true;
-select plan(37);
+select plan(45);
 
 insert into neon_auth."user" (id, name, email, "emailVerified") values
   ('d0000000-0000-0000-0000-000000000001', 'Head', 'head@tests.invalid', true),
@@ -31,9 +31,9 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
 
 select lives_ok($$
-  insert into public.assessments (id, course_slug, kind, title, brief, max_score, position) values
-    ('d0000000-0000-0000-0000-0000000000b1', 'work-course', 'project', 'Build a site', 'Three pages.', 100, 1),
-    ('d0000000-0000-0000-0000-0000000000b2', 'work-course', 'exercise', 'Warm-up', 'Ten questions.', 10, 2)
+  insert into public.assessments (id, course_slug, kind, title, brief, position) values
+    ('d0000000-0000-0000-0000-0000000000b1', 'work-course', 'project', 'Build a site', 'Three pages.', 1),
+    ('d0000000-0000-0000-0000-0000000000b2', 'work-course', 'exercise', 'Warm-up', 'Ten questions.', 2)
 $$, 'the admin types in a course''s track');
 select is((select created_by from public.assessments where id = 'd0000000-0000-0000-0000-0000000000b1'),
   'd0000000-0000-0000-0000-000000000001'::uuid, 'which records who added it');
@@ -57,19 +57,17 @@ select throws_ok($$
   values ('d0000000-0000-0000-0000-0000000000b1', 'd0000000-0000-0000-0000-0000000000e1')
 $$, '23505', null, 'and only once each');
 
-select throws_ok($$ update public.assignments set score = 11 where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
-  '23514', 'The score can''t be more than 10', 'a score can''t exceed the maximum');
-select lives_ok($$ update public.assignments set score = 8, feedback = 'Good' where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
-  'the admin enters a score and feedback');
+select throws_ok($$ update public.assignments set grade = 'superb' where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
+  '22P02', null, 'a grade is one of the four');
+select lives_ok($$ update public.assignments set grade = 'very_good', feedback = 'Good' where id = 'd0000000-0000-0000-0000-0000000000c2' $$,
+  'the admin gives a grade and feedback');
 select is((select marked_by from public.assignments where id = 'd0000000-0000-0000-0000-0000000000c2'),
   'd0000000-0000-0000-0000-000000000001'::uuid, 'which is stamped with who marked it');
-select throws_ok($$ update public.assessments set max_score = 5 where id = 'd0000000-0000-0000-0000-0000000000b2' $$,
-  '23514', 'A student already has a score above 5', 'the maximum can''t drop below a score given');
 select throws_ok($$ update public.assessments set course_slug = 'other-course' where id = 'd0000000-0000-0000-0000-0000000000b2' $$,
-  '23514', null, 'and an assessment stays on its course');
-update public.assignments set score = null where id = 'd0000000-0000-0000-0000-0000000000c2';
+  '23514', null, 'an assessment stays on its course');
+update public.assignments set grade = null where id = 'd0000000-0000-0000-0000-0000000000c2';
 select is((select marked_at from public.assignments where id = 'd0000000-0000-0000-0000-0000000000c2'),
-  null, 'clearing the score clears the mark');
+  null, 'clearing the grade clears the mark');
 
 select throws_ok($$
   insert into public.submission_files (assignment_id, name, storage_key, size_bytes)
@@ -155,19 +153,57 @@ select isnt((select submitted_at from public.my_assignments() where id = 'd00000
 -- the admin opens the project, then marks the exercise
 select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
 update public.assignments set opened_at = now() where id = 'd0000000-0000-0000-0000-0000000000c1';
-update public.assignments set score = 9 where id = 'd0000000-0000-0000-0000-0000000000c2';
+update public.assignments set grade = 'excellent' where id = 'd0000000-0000-0000-0000-0000000000c2';
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.ada'))::text, true);
 
 select is((select count(*)::int from public.my_assignment_files('d0000000-0000-0000-0000-0000000000c1')),
   1, 'once opened, the project''s brief file is there to download');
 select throws_ok($$ select public.my_remove_file((select id from public.my_assignment_files('d0000000-0000-0000-0000-0000000000c2')
-  where source = 'mine')) $$, '23514', null, 'marked work can''t be changed');
+  where source = 'mine')) $$, '23514', null, 'graded work can''t be changed');
+select is((select grade::text from public.my_assignments() where id = 'd0000000-0000-0000-0000-0000000000c2'),
+  'excellent', 'and the student sees their grade');
 
 -- the admin takes the login away
 select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
 select public.remove_student_login('d0000000-0000-0000-0000-0000000000a1');
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.ada'))::text, true);
 select is((select count(*)::int from public.my_assignments()), 0, 'a removed login reaches nothing');
+
+-- ── deleting a student ─────────────────────────────────────────────────
+-- Bola has a login, an open project with a staff file, and an unpaid invoice
+
+select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
+insert into public.invoices (id, enrolment_id, description, amount_kobo, due_on) values
+  ('d0000000-0000-0000-0000-0000000000f1', 'd0000000-0000-0000-0000-0000000000e2', 'Tuition', 500000, current_date),
+  ('d0000000-0000-0000-0000-0000000000f2', 'd0000000-0000-0000-0000-0000000000e1', 'Tuition', 500000, current_date);
+insert into public.payments (invoice_id, amount_kobo, method, reference, recorded_by)
+values ('d0000000-0000-0000-0000-0000000000f2', 1000, 'cash', 'DEL-1', 'd0000000-0000-0000-0000-000000000001');
+
+select throws_ok($$ select public.delete_student('d0000000-0000-0000-0000-0000000000a1') $$,
+  '23514', 'Ada Obi has payments on record and can''t be deleted. Set their status to Withdrawn instead.',
+  'a student with payments on record can''t be deleted');
+select throws_ok($$ delete from public.students where id = 'd0000000-0000-0000-0000-0000000000a2' $$,
+  '23503', null, 'a plain delete is stopped by the student''s invoice');
+
+select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000002"}', true);
+select throws_ok($$ select public.delete_student('d0000000-0000-0000-0000-0000000000a2') $$,
+  '42501', null, 'an instructor can''t delete a student');
+
+select set_config('request.jwt.claims', '{"sub": "d0000000-0000-0000-0000-000000000001"}', true);
+select is(public.delete_student('d0000000-0000-0000-0000-0000000000a2'),
+  array['submissions/d0000000-0000-0000-0000-0000000000c3/s/marked.pdf'],
+  'the admin deletes a student with no payments, and gets their files'' keys back');
+select is((select count(*)::int from public.students where id = 'd0000000-0000-0000-0000-0000000000a2')
+  + (select count(*)::int from public.enrolments where student_id = 'd0000000-0000-0000-0000-0000000000a2')
+  + (select count(*)::int from public.invoices where id = 'd0000000-0000-0000-0000-0000000000f1')
+  + (select count(*)::int from public.assignments where id = 'd0000000-0000-0000-0000-0000000000c3'),
+  0, 'their enrolments, unpaid invoice and assigned work go with them');
+select is((select count(*)::int from public.assessments), 2, 'the course''s assessments stay');
+select is((select count(*)::int from public.audit_log where action = 'delete_student'
+  and row_id = 'd0000000-0000-0000-0000-0000000000a2'), 1, 'the deletion is in the audit log');
+reset role;
+select is((select count(*)::int from neon_auth."user" where email = 'bola@tests.invalid'),
+  0, 'and their login is gone');
 
 select * from finish();
 rollback;

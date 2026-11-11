@@ -32,6 +32,10 @@ import { Textarea } from "#/components/ui/textarea";
 import { toast } from "#/components/ui/toast";
 import {
 	type AssessmentKind,
+	GRADE_LABEL,
+	GRADES,
+	type Grade,
+	isGrade,
 	isKind,
 	KIND_LABEL,
 } from "#/lib/assessment-status";
@@ -52,7 +56,7 @@ import { useApply } from "./use-apply";
 
 /* The assessment actions: typing a piece of work into a course's track,
    changing it, assigning it, and marking one student's work. The database
-   decides what is allowed (a score above the maximum, a student from
+   decides what is allowed (a grade outside the four, a student from
    another course) and its reason is shown when it refuses. */
 
 const KINDS: { label: string; value: AssessmentKind }[] = [
@@ -94,14 +98,12 @@ function KindField({
 	);
 }
 
-function TitleBriefScore({
+function TitleBrief({
 	title = "",
 	brief = "",
-	maxScore = 100,
 }: {
 	title?: string;
 	brief?: string;
-	maxScore?: number;
 }) {
 	return (
 		<>
@@ -128,20 +130,6 @@ function TitleBriefScore({
 					What the student has to do. They see it once the work is open to them.
 					Files are added after saving.
 				</FieldDescription>
-			</Field>
-			<Field>
-				<FieldLabel htmlFor="as-max">Marked out of</FieldLabel>
-				<Input
-					id="as-max"
-					name="maxScore"
-					type="number"
-					inputMode="numeric"
-					min={1}
-					max={1000}
-					step={1}
-					required
-					defaultValue={maxScore}
-				/>
 			</Field>
 		</>
 	);
@@ -172,7 +160,6 @@ export function NewAssessmentButton({
 				kind,
 				title: f.get("title"),
 				brief: f.get("brief"),
-				maxScore: Number(f.get("maxScore")),
 				assign: f.get("assign") === "on",
 			},
 		});
@@ -231,7 +218,7 @@ export function NewAssessmentButton({
 							</Select>
 						</Field>
 						<KindField id="as-kind" value={kind} onChange={setKind} />
-						<TitleBriefScore />
+						<TitleBrief />
 						<label className="flex items-start gap-2 text-sm">
 							<input
 								type="checkbox"
@@ -283,7 +270,6 @@ export function EditAssessmentButton({
 					kind,
 					title: f.get("title"),
 					brief: f.get("brief"),
-					maxScore: Number(f.get("maxScore")),
 					position: Number(f.get("position")),
 				},
 			}),
@@ -311,11 +297,7 @@ export function EditAssessmentButton({
 					</DialogHeader>
 					<FieldGroup>
 						<KindField id="as-kind" value={kind} onChange={setKind} />
-						<TitleBriefScore
-							title={a.title}
-							brief={a.brief}
-							maxScore={a.max_score}
-						/>
+						<TitleBrief title={a.title} brief={a.brief} />
 						<Field>
 							<FieldLabel htmlFor="as-position">Order on the track</FieldLabel>
 							<Input
@@ -449,7 +431,7 @@ export function AssignButton({
 	);
 }
 
-/* One student's work: what they uploaded, the score and feedback, the due
+/* One student's work: what they uploaded, the grade and feedback, the due
    date, and files added for them or handed back. */
 export function MarkDialog({
 	assessment: a,
@@ -464,6 +446,7 @@ export function MarkDialog({
 }) {
 	const apply = useApply();
 	const [pending, setPending] = useState(false);
+	const [grade, setGrade] = useState<Grade | null>(g.grade);
 
 	async function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
 		ev.preventDefault();
@@ -473,7 +456,7 @@ export function MarkDialog({
 			markAssignment({
 				data: {
 					id: g.id,
-					score: f.get("score"),
+					grade,
 					feedback: f.get("feedback"),
 					dueOn: f.get("dueOn"),
 				},
@@ -526,20 +509,32 @@ export function MarkDialog({
 						</div>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<Field>
-								<FieldLabel htmlFor="mark-score">
-									Score (out of {a.max_score})
-								</FieldLabel>
-								<Input
-									id="mark-score"
-									name="score"
-									type="number"
-									inputMode="numeric"
-									min={0}
-									max={a.max_score}
-									step={1}
-									defaultValue={g.score ?? ""}
-								/>
-								<FieldDescription>Blank means not yet marked.</FieldDescription>
+								<FieldLabel htmlFor="mark-grade">Grade</FieldLabel>
+								<Select
+									items={[
+										{ label: "Not graded yet", value: "" },
+										...GRADES.map((v) => ({
+											label: GRADE_LABEL[v],
+											value: v,
+										})),
+									]}
+									value={grade ?? ""}
+									onValueChange={(v) => setGrade(isGrade(v) ? v : null)}
+								>
+									<SelectTrigger id="mark-grade">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectGroup>
+											<SelectItem value="">Not graded yet</SelectItem>
+											{GRADES.map((v) => (
+												<SelectItem key={v} value={v}>
+													{GRADE_LABEL[v]}
+												</SelectItem>
+											))}
+										</SelectGroup>
+									</SelectContent>
+								</Select>
 							</Field>
 							<Field>
 								<FieldLabel htmlFor="mark-due">Due date</FieldLabel>
@@ -561,7 +556,7 @@ export function MarkDialog({
 								rows={4}
 							/>
 							<FieldDescription>
-								The student sees the score and feedback in their portal.
+								The student sees the grade and feedback in their portal.
 							</FieldDescription>
 						</Field>
 					</FieldGroup>

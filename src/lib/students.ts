@@ -4,6 +4,7 @@ import { getStaff } from "./auth";
 import { type Db, withStaff } from "./db.server";
 import { type Outcome, refusal } from "./outcome";
 import { type EnrolmentStatus, isStatus } from "./status";
+import { removeStored } from "./storage.server";
 
 /* The student registry: who studies here, on which course, in what status,
    and what they owe. A student's status is per course (an enrolment); the
@@ -432,6 +433,27 @@ export const recordPayment = createServerFn({ method: "POST" })
 					})
 					.execute(),
 			);
+			return { ok: true };
+		} catch (e) {
+			return refusal(e);
+		}
+	});
+
+/* Removes a student from the registry, for someone entered by mistake:
+   their enrolments, unpaid invoices, assigned work, uploads and portal
+   login go with them. The database refuses when they have a payment on
+   record (such a student is withdrawn instead) and its reason is shown. */
+export const deleteStudent = createServerFn({ method: "POST" })
+	.validator((id: unknown) => String(id ?? ""))
+	.handler(async ({ data: id }): Promise<Outcome> => {
+		if (!UUID.test(id)) return { ok: false, message: "No such student." };
+		try {
+			const staff = await signedIn();
+			const { rows } = await withStaff(staff.id, (db) =>
+				sql<{ keys: string[] }>`
+					select public.delete_student(${id}::uuid) as keys`.execute(db),
+			);
+			await removeStored(rows[0]?.keys ?? []);
 			return { ok: true };
 		} catch (e) {
 			return refusal(e);

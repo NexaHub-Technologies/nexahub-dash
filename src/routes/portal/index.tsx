@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRightIcon, ClipboardListIcon, LockIcon } from "lucide-react";
-import { TonePill } from "#/components/dashboard/status-badge";
+import { GradeBadge, TonePill } from "#/components/dashboard/status-badge";
 import { Card } from "#/components/ui/card";
 import {
 	Empty,
@@ -11,7 +11,6 @@ import {
 } from "#/components/ui/empty";
 import {
 	KIND_LABEL,
-	scoreText,
 	WORK_LABEL,
 	WORK_TONE,
 	workState,
@@ -28,7 +27,7 @@ const stateOf = (w: MyWork) =>
 	workState({
 		locked: w.locked,
 		submitted: w.submitted_at !== null,
-		score: w.score,
+		grade: w.grade,
 	});
 
 /* The student's projects and exercises, course by course, in the order
@@ -51,7 +50,7 @@ function MyWorkPage() {
 				<p className="text-sm text-muted-foreground">
 					Hello {student.full_name.split(/\s+/)[0]}. Your projects and exercises
 					are here: download what you need, upload your work, and see your
-					marks.
+					grades.
 				</p>
 			</div>
 
@@ -101,11 +100,7 @@ function WorkRow({ work: w }: { work: MyWork }) {
 						: null}
 				</span>
 			</span>
-			{w.score !== null ? (
-				<span className="shrink-0 font-heading text-lg font-extrabold tabular-nums">
-					{scoreText(w.score, w.max_score)}
-				</span>
-			) : null}
+			{w.grade !== null ? <GradeBadge grade={w.grade} /> : null}
 			{w.locked ? (
 				<LockIcon
 					aria-hidden

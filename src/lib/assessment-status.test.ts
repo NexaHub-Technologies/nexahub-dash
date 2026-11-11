@@ -4,23 +4,23 @@ import { cleanFileName, formatBytes, keyName } from "./files";
 
 describe("workState", () => {
 	it("is locked until opened", () => {
-		expect(workState({ locked: true, submitted: false, score: null })).toBe(
+		expect(workState({ locked: true, submitted: false, grade: null })).toBe(
 			"locked",
 		);
 	});
 	it("is open, then submitted once the student uploads", () => {
-		expect(workState({ locked: false, submitted: false, score: null })).toBe(
+		expect(workState({ locked: false, submitted: false, grade: null })).toBe(
 			"open",
 		);
-		expect(workState({ locked: false, submitted: true, score: null })).toBe(
+		expect(workState({ locked: false, submitted: true, grade: null })).toBe(
 			"submitted",
 		);
 	});
-	it("is marked whenever there is a score, even a zero or while locked", () => {
-		expect(workState({ locked: false, submitted: true, score: 0 })).toBe(
+	it("is marked whenever there is a grade, even the lowest or while locked", () => {
+		expect(workState({ locked: false, submitted: true, grade: "bad" })).toBe(
 			"marked",
 		);
-		expect(workState({ locked: true, submitted: false, score: 70 })).toBe(
+		expect(workState({ locked: true, submitted: false, grade: "good" })).toBe(
 			"marked",
 		);
 	});

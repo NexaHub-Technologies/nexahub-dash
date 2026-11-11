@@ -14,6 +14,25 @@ create table if not exists neon_auth."user" (
   "createdAt" timestamptz not null default now(),
   "updatedAt" timestamptz not null default now()
 );
+-- a password login for a user, and their sessions: what a student's login
+-- is made of (20261111090000_assessments.sql)
+create table if not exists neon_auth.account (
+  id uuid primary key default gen_random_uuid(),
+  "accountId" text not null,
+  "providerId" text not null,
+  "userId" uuid not null references neon_auth."user" (id) on delete cascade,
+  password text,
+  "createdAt" timestamptz not null default now(),
+  "updatedAt" timestamptz not null
+);
+create table if not exists neon_auth.session (
+  id uuid primary key default gen_random_uuid(),
+  "expiresAt" timestamptz not null,
+  token text not null unique,
+  "createdAt" timestamptz not null default now(),
+  "updatedAt" timestamptz not null,
+  "userId" uuid not null references neon_auth."user" (id) on delete cascade
+);
 
 do $$
 begin

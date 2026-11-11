@@ -7,7 +7,9 @@ import {
 import {
 	ArrowLeftIcon,
 	ChevronDownIcon,
+	CopyIcon,
 	DownloadIcon,
+	KeyRoundIcon,
 	PencilIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -15,7 +17,7 @@ import {
 	AddInvoiceButton,
 	InvoiceActions,
 } from "#/components/dashboard/fee-dialogs";
-import { StatusBadge } from "#/components/dashboard/status-badge";
+import { StatusBadge, TonePill } from "#/components/dashboard/status-badge";
 import { useApply } from "#/components/dashboard/use-apply";
 import {
 	AlertDialog,
@@ -71,6 +73,20 @@ import {
 	TableRow,
 } from "#/components/ui/table";
 import { Textarea } from "#/components/ui/textarea";
+import { toast } from "#/components/ui/toast";
+import {
+	KIND_LABEL,
+	scoreText,
+	WORK_LABEL,
+	WORK_TONE,
+	workState,
+} from "#/lib/assessment-status";
+import {
+	getStudentCoursework,
+	removeStudentLogin,
+	type StudentCoursework,
+	setStudentLogin,
+} from "#/lib/assessments";
 import { formatDate, formatNaira } from "#/lib/format";
 import {
 	type EnrolmentStatus,
@@ -91,9 +107,12 @@ export const Route = createFileRoute("/_app/students/$id")({
 		if (context.staff.role !== "admin") throw redirect({ to: "/" });
 	},
 	loader: async ({ params }) => {
-		const s = await getStudent({ data: params.id });
-		if (!s) throw notFound();
-		return s;
+		const [student, coursework] = await Promise.all([
+			getStudent({ data: params.id }),
+			getStudentCoursework({ data: params.id }),
+		]);
+		if (!student) throw notFound();
+		return { student, coursework };
 	},
 	component: StudentPage,
 });
@@ -102,7 +121,7 @@ const yesNo = (v: string | boolean | undefined) =>
 	typeof v === "boolean" ? (v ? "Yes" : "No") : (v ?? "");
 
 function StudentPage() {
-	const s = Route.useLoaderData();
+	const { student: s, coursework } = Route.useLoaderData();
 	const courseTitle = (slug: string) =>
 		s.enrolments.find((e) => e.course_slug === slug)?.course ?? slug;
 	const owed = s.invoices.reduce(
@@ -168,6 +187,8 @@ function StudentPage() {
 							))}
 						</CardContent>
 					</Card>
+
+					<CourseworkCard coursework={coursework} />
 
 					<Card>
 						<CardHeader>
@@ -323,6 +344,7 @@ function StudentPage() {
 
 				<div className="flex min-w-0 flex-col gap-5">
 					<DetailsCard student={s} />
+					<LoginCard student={s} coursework={coursework} />
 					{s.application ? (
 						<Card>
 							<Collapsible>
@@ -631,6 +653,197 @@ function DetailsCard({ student: s }: { student: StudentDetail }) {
 					))}
 				</dl>
 			</CardContent>
+		</Card>
+	);
+}
+
+/* The projects and exercises assigned to the student, across their courses.
+   Each links to the assessment, where it is opened, marked and its files
+   are. */
+function CourseworkCard({ coursework }: { coursework: StudentCoursework }) {
+	const work = coursework.assignments;
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Assessments</CardTitle>
+				<CardDescription>
+					{work.length
+						? "Projects and exercises assigned to them."
+						: "Nothing assigned yet. Work is assigned from Assessments."}
+				</CardDescription>
+			</CardHeader>
+			{work.length ? (
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Work</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead className="text-right">Score</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{work.map((w) => {
+								const state = workState(w);
+								return (
+									<TableRow key={w.id}>
+										<TableCell className="whitespace-normal">
+											<Link
+												to="/assessments/$id"
+												params={{ id: w.assessment_id }}
+												className="flex flex-col"
+											>
+												<span className="font-medium hover:underline">
+													{w.title}
+												</span>
+												<span className="text-xs text-muted-foreground">
+													{KIND_LABEL[w.kind]} · {w.course}
+													{w.due_on ? ` · due ${formatDate(w.due_on)}` : ""}
+												</span>
+											</Link>
+										</TableCell>
+										<TableCell>
+											<TonePill tone={WORK_TONE[state]}>
+												{WORK_LABEL[state]}
+											</TonePill>
+										</TableCell>
+										<TableCell className="text-right font-medium tabular-nums">
+											{w.score === null ? "—" : scoreText(w.score, w.max_score)}
+										</TableCell>
+									</TableRow>
+								);
+							})}
+						</TableBody>
+					</Table>
+				</CardContent>
+			) : null}
+		</Card>
+	);
+}
+
+/* The student's sign-in for the portal. The dashboard sends no email, so a
+   new password is shown here once for the admin to pass on by hand. */
+function LoginCard({
+	student: s,
+	coursework,
+}: {
+	student: StudentDetail;
+	coursework: StudentCoursework;
+}) {
+	const apply = useApply();
+	const [pending, setPending] = useState(false);
+	// kept after the dialog closes, so it doesn't blank while fading out
+	const [password, setPassword] = useState("");
+	const [handover, setHandover] = useState(false);
+	const [removing, setRemoving] = useState(false);
+	const { hasLogin } = coursework;
+
+	async function issue() {
+		setPending(true);
+		const r = await setStudentLogin({ data: s.id });
+		setPending(false);
+		if (!r.ok) {
+			toast.add({
+				title: "Login not changed",
+				description: r.message,
+				type: "error",
+			});
+			return;
+		}
+		setPassword(r.data.password);
+		setHandover(true);
+		// reloads the card's state behind the dialog
+		await apply(
+			Promise.resolve({ ok: true }),
+			hasLogin ? "New password set" : "Login created",
+		);
+	}
+
+	const details = `Sign in at ${typeof window === "undefined" ? "" : window.location.origin}/login\nEmail: ${coursework.loginEmail}\nPassword: ${password}`;
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Portal login</CardTitle>
+				<CardDescription>
+					{hasLogin
+						? `Signs in as ${coursework.loginEmail} to download and upload their work.`
+						: "No login yet, so they can't reach their work online."}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="flex flex-wrap gap-2">
+				<Button variant="outline" size="sm" onClick={issue} disabled={pending}>
+					{pending ? (
+						<Spinner data-icon="inline-start" />
+					) : (
+						<KeyRoundIcon data-icon="inline-start" />
+					)}
+					{hasLogin ? "Reset password" : "Create login"}
+				</Button>
+				{hasLogin ? (
+					<Button variant="ghost" size="sm" onClick={() => setRemoving(true)}>
+						Remove login
+					</Button>
+				) : null}
+			</CardContent>
+
+			<Dialog open={handover} onOpenChange={setHandover}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Give {s.full_name} these details</DialogTitle>
+						<DialogDescription>
+							The password is shown this once and can't be shown again. If it is
+							lost, reset it. They can change it after signing in.
+						</DialogDescription>
+					</DialogHeader>
+					<dl className="grid gap-3 rounded-lg border p-4 text-sm">
+						<div className="grid gap-0.5">
+							<dt className="text-muted-foreground">Email</dt>
+							<dd className="break-all">{coursework.loginEmail}</dd>
+						</div>
+						<div className="grid gap-0.5">
+							<dt className="text-muted-foreground">Password</dt>
+							<dd className="font-mono text-base font-semibold">{password}</dd>
+						</div>
+					</dl>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={async () => {
+								await navigator.clipboard.writeText(details);
+								toast.add({ title: "Copied", type: "success" });
+							}}
+						>
+							<CopyIcon data-icon="inline-start" />
+							Copy details
+						</Button>
+						<DialogClose render={<Button>Done</Button>} />
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<AlertDialog open={removing} onOpenChange={setRemoving}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Remove {s.full_name}'s login?</AlertDialogTitle>
+						<AlertDialogDescription>
+							They are signed out and can't sign back in. Their work and marks
+							are kept, and you can create a new login later.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Keep it</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={() =>
+								apply(removeStudentLogin({ data: s.id }), "Login removed")
+							}
+						>
+							Remove
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Card>
 	);
 }

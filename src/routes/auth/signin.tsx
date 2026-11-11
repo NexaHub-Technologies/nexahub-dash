@@ -36,8 +36,9 @@ export const Route = createFileRoute("/auth/signin")({
 					);
 					return back("failed");
 				}
-				/* A right password still needs an active staff row; the app's
-				   layout checks that and sends anyone else back here. */
+				/* A right password still needs an active staff row or a student
+				   row; the app's layout checks, sends a student on to the portal
+				   and anyone else back here. */
 				return new Response(null, { status: 303, headers: { Location: "/" } });
 			},
 		},

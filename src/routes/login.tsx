@@ -10,7 +10,7 @@ import {
 } from "#/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
-import { getStaff } from "../lib/auth";
+import { getViewer } from "../lib/auth";
 
 type Search = { error?: string; email?: string };
 
@@ -23,7 +23,9 @@ const ERRORS: Record<string, string> = {
 
 export const Route = createFileRoute("/login")({
 	beforeLoad: async () => {
-		if (await getStaff()) throw redirect({ to: "/" });
+		const viewer = await getViewer();
+		if (viewer?.staff) throw redirect({ to: "/" });
+		if (viewer?.student) throw redirect({ to: "/portal" });
 	},
 	validateSearch: (s: Record<string, unknown>): Search => ({
 		...(typeof s.error === "string" ? { error: s.error } : {}),
@@ -46,7 +48,7 @@ function Login() {
 					<CardTitle className="font-heading text-3xl font-extrabold tracking-tight">
 						NexaHubTech <span className="hot-on-light-text">Dash</span>
 					</CardTitle>
-					<CardDescription>Sign in to the staff console</CardDescription>
+					<CardDescription>Sign in to continue</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<form method="post" action="/auth/signin">

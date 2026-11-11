@@ -14,7 +14,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "#/components/ui/sidebar";
-import { getStaff, type Staff } from "../lib/auth";
+import { getViewer, type Staff } from "../lib/auth";
 import { getOverviewStats } from "../lib/overview";
 import { getShellPrefs } from "../lib/shell";
 
@@ -37,10 +37,12 @@ export const Route = createFileRoute("/_app")({
 		if (typeof window !== "undefined" && checked) {
 			if (Date.now() - checked.at < STAFF_TTL) return { staff: checked.staff };
 		}
-		const staff = await getStaff();
+		const viewer = await getViewer();
+		const staff = viewer?.staff;
 		if (!staff) {
 			checked = undefined;
-			throw redirect({ to: "/login" });
+			// a student who signs in lands here first; their work is in the portal
+			throw redirect({ to: viewer?.student ? "/portal" : "/login" });
 		}
 		if (typeof window !== "undefined") checked = { staff, at: Date.now() };
 		return { staff };

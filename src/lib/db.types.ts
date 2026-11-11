@@ -7,6 +7,8 @@ import type { ColumnType } from "kysely";
 
 export type ApplicationStatus = "approved" | "declined" | "new";
 
+export type AssessmentKind = "exercise" | "project";
+
 export type Channel = "email" | "sms";
 
 export type EnrolmentStatus = "active" | "awaiting_payment" | "completed" | "paused" | "withdrawn";
@@ -62,6 +64,42 @@ export interface Applications {
   reviewed_at: Timestamp | null;
   reviewed_by: string | null;
   status: Generated<ApplicationStatus>;
+}
+
+export interface AssessmentFiles {
+  assessment_id: string;
+  content_type: Generated<string>;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  name: string;
+  size_bytes: Int8;
+  storage_key: string;
+  uploaded_by: Generated<string | null>;
+}
+
+export interface Assessments {
+  brief: Generated<string>;
+  course_slug: string;
+  created_at: Generated<Timestamp>;
+  created_by: Generated<string | null>;
+  id: Generated<string>;
+  kind: AssessmentKind;
+  max_score: Generated<number>;
+  position: Generated<number>;
+  title: string;
+}
+
+export interface Assignments {
+  assessment_id: string;
+  created_at: Generated<Timestamp>;
+  due_on: Timestamp | null;
+  enrolment_id: string;
+  feedback: string | null;
+  id: Generated<string>;
+  marked_at: Timestamp | null;
+  marked_by: string | null;
+  opened_at: Timestamp | null;
+  score: number | null;
 }
 
 export interface AuditLog {
@@ -175,6 +213,7 @@ export interface Staff {
 export interface Students {
   address: string | null;
   application_id: string | null;
+  auth_user_id: string | null;
   created_at: Generated<Timestamp>;
   date_of_birth: Timestamp | null;
   email: string;
@@ -185,8 +224,22 @@ export interface Students {
   phone: string | null;
 }
 
+export interface SubmissionFiles {
+  assignment_id: string;
+  content_type: Generated<string>;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  name: string;
+  size_bytes: Int8;
+  staff_id: string | null;
+  storage_key: string;
+}
+
 export interface DB {
   applications: Applications;
+  assessment_files: AssessmentFiles;
+  assessments: Assessments;
+  assignments: Assignments;
   audit_log: AuditLog;
   course_modules: CourseModules;
   courses: Courses;
@@ -199,4 +252,5 @@ export interface DB {
   payments: Payments;
   staff: Staff;
   students: Students;
+  submission_files: SubmissionFiles;
 }

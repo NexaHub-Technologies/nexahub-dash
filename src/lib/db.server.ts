@@ -28,8 +28,9 @@ function connect() {
 
 export type Db = Transaction<DB>;
 
-/* Runs `work` as the given member of staff. The id must come from a session
-   the server has already verified, never from the request itself. */
+/* Runs `work` as the given signed-in person: a member of staff, or a
+   student (whose id reaches only the my_* functions). The id must come from
+   a session the server has already verified, never from the request itself. */
 export function withStaff<T>(staffId: string, work: (db: Db) => Promise<T>) {
 	return connect()
 		.transaction()

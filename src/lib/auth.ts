@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { sql } from "kysely";
 import { withStaff } from "./db.server";
 import { neonAuth } from "./neon-auth.server";
 
@@ -29,5 +30,46 @@ export const getStaff = createServerFn({ method: "GET" }).handler(
 				.executeTakeFirst(),
 		);
 		return row ?? null;
+	},
+);
+
+export type Student = {
+	id: string;
+	full_name: string;
+	email: string;
+	/* their Neon Auth user: who the database sees them as */
+	auth_id: string;
+};
+
+/* The signed-in student, or null. A student's login is a Neon Auth user
+   that a student row points at (students.auth_user_id); my_profile() finds
+   that row from the session's user id. Staff are never students: someone
+   with both is taken to the staff console. */
+export const getStudent = createServerFn({ method: "GET" }).handler(
+	async (): Promise<Student | null> => {
+		const { data } = await neonAuth().getSession();
+		const id = data?.user?.id;
+		if (!id || !UUID.test(id)) return null;
+		const { rows } = await withStaff(id, (db) =>
+			sql<Omit<Student, "auth_id">>`
+				select id, full_name, email from public.my_profile()`.execute(db),
+		);
+		return rows[0] ? { ...rows[0], auth_id: id } : null;
+	},
+);
+
+/* Who is signed in, for the two front doors: the staff console and the
+   student portal. One session read, then the staff row and only then the
+   student row. */
+export const getViewer = createServerFn({ method: "GET" }).handler(
+	async (): Promise<
+		| { staff: Staff; student?: undefined }
+		| { student: Student; staff?: undefined }
+		| null
+	> => {
+		const staff = await getStaff();
+		if (staff) return { staff };
+		const student = await getStudent();
+		return student ? { student } : null;
 	},
 );

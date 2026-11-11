@@ -1,5 +1,6 @@
 import {
 	BookOpenIcon,
+	ClipboardListIcon,
 	GraduationCapIcon,
 	InboxIcon,
 	LayoutGridIcon,
@@ -50,6 +51,15 @@ export const MAIN_NAV: NavItem[] = [
 		Icon: GraduationCapIcon,
 		admin: true,
 		hint: (s) => `${formatCount(s.students)} active`,
+	},
+	{
+		to: "/assessments",
+		label: "Assessments",
+		Icon: ClipboardListIcon,
+		admin: true,
+		hint: (s) =>
+			s.workToMark ? `${formatCount(s.workToMark)} to mark` : "Nothing to mark",
+		alert: (s) => s.workToMark,
 	},
 	{
 		to: "/fees",

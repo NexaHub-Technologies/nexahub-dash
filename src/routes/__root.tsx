@@ -7,6 +7,7 @@ import {
 import { useEffect } from "react";
 import { Toaster } from "#/components/ui/toast";
 import { TooltipProvider } from "#/components/ui/tooltip";
+import { THEME_SCRIPT } from "#/lib/theme";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -17,7 +18,8 @@ export const Route = createRootRoute({
 			{ title: "NexaHubTech Dash" },
 			/* a staff tool: nothing here should be indexed */
 			{ name: "robots", content: "noindex, nofollow" },
-			{ name: "theme-color", content: "#1a0828" },
+			/* one only: the router keeps a single meta per name */
+			{ name: "theme-color", content: "#f4eff7" },
 		],
 		links: [
 			{ rel: "icon", type: "image/svg+xml", href: "/logo-main.svg" },
@@ -40,9 +42,11 @@ function Root() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en-NG">
+		// the theme script sets the html's class before React hydrates
+		<html lang="en-NG" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				<script>{THEME_SCRIPT}</script>
 			</head>
 			<body>
 				<TooltipProvider>

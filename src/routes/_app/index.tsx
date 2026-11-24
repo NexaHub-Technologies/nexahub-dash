@@ -144,7 +144,7 @@ function Dashboard() {
 				) : null}
 
 				{isAdmin ? (
-					<Card className="stage flex flex-col justify-between gap-5 p-5 sm:p-6">
+					<Card className="flex flex-col justify-between gap-5 p-5 sm:p-6">
 						<Link
 							to="/fees/payments"
 							className="flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:underline"
@@ -152,7 +152,7 @@ function Dashboard() {
 							<WalletIcon aria-hidden className="size-4" /> Fees collected this
 							month
 						</Link>
-						<p className="stat-value w-fit font-heading text-4xl font-extrabold tracking-tight tabular-nums">
+						<p className="w-fit font-heading text-4xl font-bold text-accent-foreground tabular-nums">
 							{formatNaira(d.fees.collectedThisMonthKobo)}
 						</p>
 						<Separator />

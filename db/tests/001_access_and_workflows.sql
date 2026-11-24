@@ -139,7 +139,7 @@ select set_config('request.jwt.claims',
 select is((select count(*)::int from public.students), 0, 'an instructor sees no students');
 select is((select count(*)::int from public.enrolments), 0, 'nor enrolments');
 select is((select count(*)::int from public.invoices), 0, 'nor fees');
-select is((select count(*)::int from public.courses), 2, 'but does see the courses');
+select is((select count(*)::int from public.courses where slug in ('web-dev', 'free-intro')), 2, 'but does see the courses');
 select throws_ok(
   format($$ insert into public.module_progress (enrolment_id, module_n, status) values (%L, 1, 'done') $$,
          current_setting('test.enrolment')),

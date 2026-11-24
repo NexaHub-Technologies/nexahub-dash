@@ -120,7 +120,13 @@ export interface CourseModules {
 }
 
 export interface Courses {
+  /**
+   * the fee for the course taken live online
+   */
   default_fee_kobo: Generated<Int8>;
+  /**
+   * the fee for the course taken in person, when it differs
+   */
   in_person_fee_kobo: Int8 | null;
   slug: string;
   title: string;

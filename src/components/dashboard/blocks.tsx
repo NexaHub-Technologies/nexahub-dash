@@ -74,7 +74,7 @@ export function StatCard({
 				) : null}
 			</div>
 			<div className="flex flex-col gap-0.5">
-				<span className="stat-value w-fit font-heading text-4xl font-extrabold tracking-tight tabular-nums">
+				<span className="w-fit font-heading text-4xl font-bold tabular-nums">
 					{value}
 				</span>
 				<span className="text-sm text-muted-foreground">{label}</span>

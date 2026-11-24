@@ -1,4 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { BrandBackdrop } from "#/components/dashboard/brand-backdrop";
+import { ThemeToggle } from "#/components/dashboard/theme-toggle";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
@@ -41,12 +43,14 @@ function Login() {
 	const { error, email } = Route.useSearch();
 	const invalid = error ? true : undefined;
 	return (
-		<main className="stage login-stage grid place-items-center p-4">
-			<Card className="login-card w-full max-w-sm">
+		<main className="login-page grid place-items-center p-4">
+			<BrandBackdrop />
+			<ThemeToggle className="absolute top-4 right-4 z-[1]" />
+			<Card className="relative z-[1] w-full max-w-sm shadow-[var(--shadow)]">
 				<CardHeader>
-					<img src="/logo-main.svg" alt="" className="size-9" />
-					<CardTitle className="font-heading text-3xl font-extrabold tracking-tight">
-						NexaHubTech <span className="hot-on-light-text">Dash</span>
+					<img src="/logo-main.svg" alt="" className="brand-mark size-9" />
+					<CardTitle className="text-3xl font-bold">
+						NexaHubTech <span className="accent-text">Dash</span>
 					</CardTitle>
 					<CardDescription>Sign in to continue</CardDescription>
 				</CardHeader>
@@ -84,7 +88,7 @@ function Login() {
 									autoFocus={Boolean(email)}
 								/>
 							</Field>
-							<Button type="submit" size="lg" className="btn-hot">
+							<Button type="submit" size="lg">
 								Sign in
 							</Button>
 						</FieldGroup>

@@ -39,8 +39,7 @@ function summary(s: OverviewStats, isAdmin: boolean) {
 }
 
 /* The headline figures above every page, as in the DistressNow console:
-   open on the dashboard, folded to a one-line summary elsewhere. Open, they
-   sit on the website's dark stage, the figures in its hot gradient. Folding or
+   open on the dashboard, folded to a one-line summary elsewhere. Folding or
    unfolding is remembered per scope in a cookie the server reads, so the
    first paint already matches. */
 export function Overview({
@@ -96,7 +95,7 @@ export function Overview({
 				/>
 			</button>
 			<div id={regionId} hidden={!expanded} className="mt-3">
-				<div className="stage grid grid-cols-2 gap-4 p-4 sm:p-6 xl:grid-cols-4">
+				<div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
 					{isAdmin ? (
 						<StatCard
 							label="New applications"

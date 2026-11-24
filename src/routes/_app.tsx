@@ -7,6 +7,8 @@ import {
 import { AppSidebar } from "#/components/dashboard/app-sidebar";
 import { currentSection } from "#/components/dashboard/nav";
 import { Overview } from "#/components/dashboard/overview";
+import { ThemeToggle } from "#/components/dashboard/theme-toggle";
+import { useDoodleGlow } from "#/components/dashboard/use-doodle-glow";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Separator } from "#/components/ui/separator";
 import {
@@ -69,13 +71,17 @@ function AppShell() {
 	const { staff } = Route.useRouteContext();
 	const { stats, prefs } = Route.useLoaderData();
 	const { pathname } = useLocation();
+	const doodles = useDoodleGlow<HTMLElement>();
 	return (
 		<SidebarProvider
 			defaultOpen={prefs.sidebarOpen}
 			className="lg:h-svh lg:overflow-hidden"
 		>
 			<AppSidebar role={staff.role} stats={stats} />
-			<SidebarInset className="min-w-0 lg:overflow-y-auto lg:overscroll-contain">
+			<SidebarInset
+				ref={doodles}
+				className="min-w-0 lg:overflow-y-auto lg:overscroll-contain"
+			>
 				<header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:gap-3">
 					<SidebarTrigger className="-ml-1" />
 					<Separator
@@ -86,6 +92,7 @@ function AppShell() {
 						{currentSection(pathname)}
 					</span>
 					<div className="ml-auto flex items-center gap-2">
+						<ThemeToggle className="mr-1" />
 						<Avatar>
 							<AvatarFallback>{initials(staff.full_name)}</AvatarFallback>
 						</Avatar>

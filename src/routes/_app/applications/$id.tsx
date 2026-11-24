@@ -123,7 +123,7 @@ function ApplicationPage() {
 	];
 
 	return (
-		<div className="flex flex-col gap-5">
+		<div className="page-opening is-bleed flex flex-col gap-5">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="flex flex-col gap-1">
 					<div className="flex flex-wrap items-center gap-2">
@@ -300,7 +300,7 @@ function ApproveDialog({ application: a }: { application: ApplicationDetail }) {
 							<FieldDescription>
 								{feeError ??
 									(a.course_fee_kobo
-										? `The course fee is ${formatNaira(a.course_fee_kobo)}; change it for a discount.`
+										? `The ${a.course_fee_way} fee is ${formatNaira(a.course_fee_kobo)}; change it for a discount.`
 										: "This course has no fee on record; enter it.")}
 							</FieldDescription>
 						</Field>

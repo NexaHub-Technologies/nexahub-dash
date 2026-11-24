@@ -5,6 +5,8 @@ import {
 	redirect,
 } from "@tanstack/react-router";
 import { KeyRoundIcon, LogOutIcon } from "lucide-react";
+import { ThemeToggle } from "#/components/dashboard/theme-toggle";
+import { useDoodleGlow } from "#/components/dashboard/use-doodle-glow";
 import { Button } from "#/components/ui/button";
 import { getViewer } from "../lib/auth";
 
@@ -25,25 +27,29 @@ export const Route = createFileRoute("/portal")({
 	component: PortalShell,
 });
 
+/* The portal is the Academy's, so it carries the Academy's code doodles
+   across its top, as the website's Academy pages do, with a soft glow that
+   follows the mouse over them (styles.css, .doodle-top). */
 function PortalShell() {
 	const { student } = Route.useRouteContext();
+	const ref = useDoodleGlow<HTMLDivElement>();
 	return (
-		<div className="flex min-h-svh flex-col bg-muted/40">
-			<header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+		<div ref={ref} className="doodle-top flex min-h-svh flex-col bg-muted/40">
+			<header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-3 px-4">
 					<Link to="/portal" className="flex min-w-0 items-center gap-2">
-						<img src="/logo-main.svg" alt="" className="size-7" />
-						<span className="truncate font-heading text-lg font-extrabold tracking-tight">
+						<img src="/logo-main.svg" alt="" className="brand-mark size-7" />
+						<span className="truncate font-heading text-lg font-bold">
 							NexaHubTech
 						</span>
 					</Link>
 					<span className="ml-auto hidden truncate text-sm text-muted-foreground sm:block">
 						{student.full_name}
 					</span>
+					<ThemeToggle className="ml-auto sm:ml-0" />
 					<Button
 						variant="ghost"
 						size="sm"
-						className="ml-auto sm:ml-0"
 						nativeButton={false}
 						render={<Link to="/portal/password" />}
 					>

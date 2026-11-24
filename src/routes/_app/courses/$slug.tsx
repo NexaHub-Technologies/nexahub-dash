@@ -47,7 +47,7 @@ function Course() {
 	const isAdmin = staff.role === "admin";
 
 	return (
-		<div className="flex flex-col gap-5">
+		<div className="page-opening is-bleed flex flex-col gap-5">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<h1 className="text-2xl font-bold">{c.title}</h1>
 				<Button

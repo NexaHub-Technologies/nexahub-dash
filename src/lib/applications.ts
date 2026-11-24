@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { sql } from "kysely";
 import { getStaff } from "./auth";
 import { withStaff } from "./db.server";
+import { type FeeWay, feeWay } from "./fee-way";
 import { type Outcome, refusal } from "./outcome";
 
 /* Applications sent from the website's enrol form, and the review that turns
@@ -36,9 +37,20 @@ export type ApplicationDetail = ApplicationRow & {
 	decline_reason: string | null;
 	reviewed_at: string | null;
 	reviewer: string | null;
+	/* the course's fee for the way the applicant asked to learn */
 	course_fee_kobo: number;
+	course_fee_way: FeeWay;
 	student_id: string | null;
 };
+
+/* the in-person fee for someone learning in person, where the course has
+   one; otherwise the online fee */
+function courseFee(mode: string, online: string, inPerson: string | null) {
+	const way = feeWay(mode);
+	return way === "in person" && inPerson !== null
+		? { course_fee_kobo: Number(inPerson), course_fee_way: way }
+		: { course_fee_kobo: Number(online), course_fee_way: "online" as const };
+}
 
 async function signedIn() {
 	const staff = await getStaff();
@@ -131,7 +143,8 @@ export const getApplication = createServerFn({ method: "GET" })
 				.selectAll("a")
 				.select([
 					sql<string>`coalesce(c.title, a.course_slug)`.as("course"),
-					sql<string>`coalesce(c.default_fee_kobo, 0)::text`.as("course_fee"),
+					sql<string>`coalesce(c.default_fee_kobo, 0)::text`.as("online_fee"),
+					sql<string | null>`c.in_person_fee_kobo::text`.as("in_person_fee"),
 					"s.full_name as reviewer",
 					"st.id as linked_student",
 				])
@@ -172,7 +185,7 @@ export const getApplication = createServerFn({ method: "GET" })
 				decline_reason: a.decline_reason,
 				reviewed_at: iso(a.reviewed_at),
 				reviewer: a.reviewer,
-				course_fee_kobo: Number(a.course_fee),
+				...courseFee(a.mode, a.online_fee, a.in_person_fee),
 				student_id: a.status === "approved" ? student : null,
 			};
 		});

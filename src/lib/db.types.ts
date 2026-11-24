@@ -121,6 +121,7 @@ export interface CourseModules {
 
 export interface Courses {
   default_fee_kobo: Generated<Int8>;
+  in_person_fee_kobo: Int8 | null;
   slug: string;
   title: string;
   updated_at: Generated<Timestamp>;

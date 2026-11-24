@@ -23,8 +23,8 @@ import { formatCount } from "#/lib/format";
 import type { OverviewStats } from "#/lib/overview";
 import { isActive, MAIN_NAV, type NavItem, OTHER_NAV } from "./nav";
 
-/* The console's navigation (shadcn Sidebar, inset): a drawer on phones
-   that closes once a section is chosen. Expanded, the sections share the
+/* The console's navigation (shadcn Sidebar, inset), in the page's tinted
+   frame: a drawer on phones that closes once a section is chosen. Expanded, the sections share the
    sidebar's height as tabs that carry a live line each ("3 to review").
    Collapsed to the icon rail they become file tabs on the edge of the
    page: the open section comes forward in the page's own colour and joins
@@ -124,7 +124,7 @@ export function AppSidebar({
 								/>
 							</span>
 							<span className="grid leading-tight">
-								<span className="truncate font-heading font-extrabold tracking-tight">
+								<span className="truncate font-heading font-bold">
 									NexaHubTech
 								</span>
 								<span className="truncate text-xs text-muted-foreground">

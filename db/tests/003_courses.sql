@@ -6,7 +6,7 @@ create extension pgtap with schema tap;
 grant usage on schema tap to anon, authenticated, worker;
 set local search_path = public, tap;
 grant anon, authenticated, worker to current_user with inherit false, set true;
-select plan(6);
+select plan(10);
 
 insert into public.courses (slug, title) values ('known-course', 'Known Course, Properly Titled');
 
@@ -45,6 +45,18 @@ select is((select title from public.courses where slug = 'ui-ux-design'), 'Ui Ux
   'the new course gets a readable title from its slug');
 select is((select title from public.courses where slug = 'known-course'), 'Known Course, Properly Titled',
   'a known course keeps its title');
+
+reset role;
+
+-- the website's catalogue, as 20261124090000_website_courses.sql left it
+select is((select title from public.courses where slug = 'computer-essentials'), 'Computer Essentials',
+  'the catalogue carries the website''s courses');
+select ok(not exists (select 1 from public.courses where slug in ('pc-basics', 'microsoft-office', 'cybersecurity')),
+  'and not the courses it has renamed or dropped');
+select is((select (default_fee_kobo, in_person_fee_kobo)::text from public.courses where slug = 'office-essentials'),
+  '(8000000,9500000)', 'with an online and an in-person fee');
+select is((select count(*)::int from public.course_modules where course_slug = 'ai-for-office-use'), 4,
+  'and its modules');
 
 select * from finish();
 rollback;
